@@ -1,0 +1,10 @@
+<nav>
+    <a routerLink="/header">Nagłówek</a>
+  </nav>
+  
+<div class="header">
+    <button (click)="navigate(-1)">Poprzedni tydzień</button>
+    <span>{{ currentWeek | date: 'MMM d, yyyy' }} - {{ endOfWeek | date: 'MMM d, yyyy' }}</span>
+    <button (click)="navigate(1)">Następny tydzień</button>
+  </div>
+  

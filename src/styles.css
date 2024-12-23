@@ -1,1 +1,28 @@
-/* You can add global styles to this file, and also import other style files */
+.calendar-container {
+    display: flex;
+    flex-direction: column;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .day-column {
+    border: 1px solid #ccc;
+  }
+  .time-slot {
+    height: 2em;
+    border-bottom: 1px solid #ddd;
+  }
+  .time-slot.reserved {
+    background-color: #f0a;
+  }
+  .time-slot:hover {
+    cursor: pointer;
+  }
+  .details-popup {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 1em;
+  }
+  

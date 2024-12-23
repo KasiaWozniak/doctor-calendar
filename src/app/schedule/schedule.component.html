@@ -1,0 +1,10 @@
+<nav>
+    <a routerLink="/schedule">Rozkład godzin</a>
+  </nav>
+  
+<div class="schedule">
+    <div class="hour-row" *ngFor="let hour of hours">
+      <span>{{ hour }}</span>
+    </div>
+  </div>
+  
