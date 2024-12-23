@@ -1,5 +1,5 @@
 <nav>
-    <a routerLink="/calendar">Kalendarz</a>
+    <a routerLink="/calendar"></a>
   </nav>
 
   <div class="calendar-container">
@@ -7,8 +7,13 @@
       <button (click)="navigateWeek(-1)">Poprzedni tydzień</button>
       <button (click)="navigateWeek(1)">Następny tydzień</button>
     </div>
-  
+
     <div class="calendar-grid">
+        <div class="time-column">
+            <div *ngFor="let hour of ['8:00', '8:30', '9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30']">
+              {{ hour }}
+            </div>
+          </div>
       <div class="day-column" *ngFor="let day of currentWeek">
         <div
           class="day-header"
@@ -24,14 +29,15 @@
         <div
           class="time-slot"
           *ngFor="let slot of slotsPerDay[getDayKey(day)]"
+          [style.background-color]="getSlotColor(slot.type)"
           [class.reserved]="slot.reserved"
           [class.past]="slot.past || isPastDay(day)"
-          (click)="!slot.reserved && !isPastDay(day) ? reserveSlot(day, slot, 'Porada') : null"
+          (click)="!slot.reserved && !isPastDay(day) ? reserveSlot(day, slot, 'Pierwsza wizyta') : null"
           (mouseover)="showDetails(slot)"
           (mouseout)="hideDetails()"
         >
-          <span>{{ slot.time }}</span>
-        </div>
+        <span *ngIf="!slot.reserved">Zarezerwuj wizytę</span>
+        <span *ngIf="slot.reserved">Termin zarezerwowany</span>        </div>
       </div>
     </div>
   

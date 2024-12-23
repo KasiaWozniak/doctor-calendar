@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+type VisitType = 'Pierwsza wizyta' | 'Wizyta kontrolna' | 'Choroba przewlekła' | 'Recepta';
+
 interface TimeSlot {
   time: string;
   reserved: boolean;
-  type: string | null; // typ konsultacji (np. "Porada")
+  type: VisitType | null; // typ konsultacji (np. "Porada")
   details?: string; // szczegóły wizyty
   past: boolean; // czy slot jest w przeszłości
 }
@@ -20,6 +22,13 @@ export class CalendarComponent {
   today = new Date(); // Dodanie zmiennej z aktualną datą
   currentWeek: Date[] = [];
   selectedDetails: string | null = null;
+
+  visitTypes: Record<VisitType, string> = {
+    'Pierwsza wizyta': 'blue',
+    'Wizyta kontrolna': 'green',
+    'Choroba przewlekła': 'orange',
+    'Recepta': 'purple',
+  };
 
   slotsPerDay: { [key: string]: TimeSlot[] } = {};
 
@@ -52,19 +61,24 @@ export class CalendarComponent {
     });
   }
 
-  reserveSlot(day: Date, slot: TimeSlot, type: string) {
+  reserveSlot(day: Date, slot: TimeSlot, type: VisitType) {
     if (this.isPastDay(day)) {
       return; // Uniemożliwienie rezerwacji
     }
-    const dayKey = day.toISOString().split('T')[0];
+    const dayKey = this.getDayKey(day);
     const slots = this.slotsPerDay[dayKey];
     const targetSlot = slots.find((s) => s.time === slot.time);
     if (targetSlot) {
       targetSlot.reserved = true;
       targetSlot.type = type;
-      targetSlot.details = `Rezerwacja: ${type} o ${slot.time}`;
+      targetSlot.details = `Rodzaj wizyty: ${type}, godzina: ${slot.time}`;
     }
   }
+
+  getSlotColor(type: string | null): string {
+    return type && type in this.visitTypes ? this.visitTypes[type as VisitType] : 'white';
+  }
+  
 
   showDetails(slot: TimeSlot) {
     this.selectedDetails = slot.details || 'Brak szczegółów';
