@@ -1,4 +1,40 @@
 <nav>
     <a routerLink="/calendar">Kalendarz</a>
   </nav>
+  <div class="calendar-container">
+    <div class="navigation">
+      <button (click)="navigateWeek(-1)">Poprzedni tydzień</button>
+      <button (click)="navigateWeek(1)">Następny tydzień</button>
+    </div>
+  
+    <div class="calendar-grid">
+      <div class="day-column" *ngFor="let day of currentWeek">
+        <div
+          class="day-header"
+            [class.today]="day.toDateString() === today.toDateString()"
+          >
+          <div>{{ day | date: 'EEE, MMM d' }}</div>
+          <div>
+            Zarezerwowane: {{ getReservedSlotsCount(day) }}
+          </div>
+        </div>
+  
+        <div
+          class="time-slot"
+          *ngFor="let slot of slotsPerDay[getDayKey(day)]"
+          [class.reserved]="slot.reserved"
+          [class.past]="slot.past"
+          (click)="!slot.reserved ? reserveSlot(day, slot, 'Porada') : null"
+          (mouseover)="showDetails(slot)"
+          (mouseout)="hideDetails()"
+        >
+          <span>{{ slot.time }}</span>
+        </div>
+      </div>
+    </div>
+  
+    <div class="details-popup" *ngIf="selectedDetails">
+      {{ selectedDetails }}
+    </div>
+  </div>
   
