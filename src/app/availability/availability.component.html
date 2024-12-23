@@ -1,0 +1,145 @@
+<div class="availability-form">
+    <h2>Definiowanie dostępności</h2>
+  
+    <!-- Cykliczne definiowanie dostępności -->
+    <form (submit)="defineCyclicAvailability()">
+      <h3>Cykliczna dostępność</h3>
+      <label>
+        Od:
+        <input 
+        type="date" 
+        [(ngModel)]="cyclicAvailability.startDate" 
+        name="startDate" 
+        required 
+        (change)="updateMinEndDate()"
+        />
+      </label>
+      <label>
+        Do:
+        <input 
+        type="date" 
+        [(ngModel)]="cyclicAvailability.endDate" 
+        name="endDate" 
+        required 
+        [min]="cyclicAvailability.startDate"
+        />
+      </label>
+      <div>
+        <label *ngFor="let day of daysOfWeek">
+          <input
+            type="checkbox"
+            [(ngModel)]="cyclicAvailability.days[day]"
+            [name]="'day-' + day"
+          />
+          {{ day }}
+        </label>
+      </div>
+      <div>
+        <label>
+          Czas poranny:
+          <input 
+          type="time" 
+          list="time-options"
+          [(ngModel)]="cyclicAvailability.timeRanges[0].start" 
+          name="morningStart" 
+          required 
+          (change)="updateMinMorningEndTime()"
+          />
+          -
+          <input 
+          type="time" 
+          list="time-options"
+          [(ngModel)]="cyclicAvailability.timeRanges[0].end" 
+          name="morningEnd" 
+          required 
+          (change)="updateAfternoonStartTime()"
+          [min]="cyclicAvailability.timeRanges[0].start"
+          />
+        </label>
+      </div>
+      <div>
+        <label>
+          Czas popołudniowy:
+          <input 
+          type="time" 
+          list="time-options"
+          [(ngModel)]="cyclicAvailability.timeRanges[1].start" 
+          name="afternoonStart" 
+          (change)="updateAfternoonStartTime()"
+          [min]="cyclicAvailability.timeRanges[0].end"          />
+          -
+          <input type="time" 
+          list="time-options"
+          [(ngModel)]="cyclicAvailability.timeRanges[1].end" 
+          name="afternoonEnd"
+          (change)="updateAfternoonEndTime()"
+          [min]="cyclicAvailability.timeRanges[1].start"          />
+        </label>
+      </div>
+      <button type="submit">Zapisz dostępność cykliczną</button>
+    </form>
+  
+    <!-- Jednorazowe definiowanie dostępności -->
+    <form (submit)="defineSingleAvailability()">
+      <h3>Jednorazowa dostępność</h3>
+      <label>
+        Data:
+        <input type="date" [(ngModel)]="singleAvailability.date" name="singleDate" required />
+      </label>
+      <label>
+        Od:
+        <input 
+        type="time" 
+        list="time-options"
+        [(ngModel)]="singleAvailability.timeRange.start" 
+        name="singleStart" 
+        required
+        (change)="updateMinSingleEndTime()"
+        />
+      </label>
+      <label>
+        Do:
+        <input 
+        type="time" 
+        list="time-options"
+        [(ngModel)]="singleAvailability.timeRange.end" 
+        name="singleEnd" 
+        required 
+        [min]="singleAvailability.timeRange.start"
+        />
+      </label>
+
+      <datalist id="time-options">
+        <option value="08:00"></option>
+        <option value="08:30"></option>
+        <option value="09:00"></option>
+        <option value="09:30"></option>
+        <option value="10:00"></option>
+        <option value="10:30"></option>
+        <option value="11:00"></option>
+        <option value="11:30"></option>
+        <option value="12:00"></option>
+        <option value="12:30"></option>
+        <option value="13:00"></option>
+        <option value="13:30"></option>
+        <option value="14:00"></option>
+        <option value="14:30"></option>
+        <option value="15:00"></option>
+        <option value="15:30"></option>
+        <option value="16:00"></option>
+        <option value="16:30"></option>
+        <option value="17:00"></option>
+        <option value="17:30"></option>
+        <option value="18:00"></option>
+        <option value="18:30"></option>
+        <option value="19:00"></option>
+        <option value="19:30"></option>
+        <option value="20:00"></option>
+        <option value="20:30"></option>
+        <option value="21:00"></option>
+      </datalist>
+
+      <button type="submit">Zapisz jednorazową dostępność</button>
+    </form>
+  </div>
+  
