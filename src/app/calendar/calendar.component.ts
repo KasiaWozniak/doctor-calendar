@@ -53,6 +53,9 @@ export class CalendarComponent {
   }
 
   reserveSlot(day: Date, slot: TimeSlot, type: string) {
+    if (this.isPastDay(day)) {
+      return; // Uniemożliwienie rezerwacji
+    }
     const dayKey = day.toISOString().split('T')[0];
     const slots = this.slotsPerDay[dayKey];
     const targetSlot = slots.find((s) => s.time === slot.time);
@@ -85,6 +88,12 @@ export class CalendarComponent {
   getReservedSlotsCount(day: Date): number {
     const dayKey = this.getDayKey(day);
     return this.slotsPerDay[dayKey].filter(slot => slot.reserved).length;
+  }
+  
+  isPastDay(date: Date): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Ustawienie początku dnia
+    return date.getTime() < today.getTime();
   }
   
 }

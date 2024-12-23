@@ -1,6 +1,7 @@
 <nav>
     <a routerLink="/calendar">Kalendarz</a>
   </nav>
+
   <div class="calendar-container">
     <div class="navigation">
       <button (click)="navigateWeek(-1)">Poprzedni tydzień</button>
@@ -12,6 +13,7 @@
         <div
           class="day-header"
             [class.today]="day.toDateString() === today.toDateString()"
+            [class.past-day]="isPastDay(day)"
           >
           <div>{{ day | date: 'EEE, MMM d' }}</div>
           <div>
@@ -23,8 +25,8 @@
           class="time-slot"
           *ngFor="let slot of slotsPerDay[getDayKey(day)]"
           [class.reserved]="slot.reserved"
-          [class.past]="slot.past"
-          (click)="!slot.reserved ? reserveSlot(day, slot, 'Porada') : null"
+          [class.past]="slot.past || isPastDay(day)"
+          (click)="!slot.reserved && !isPastDay(day) ? reserveSlot(day, slot, 'Porada') : null"
           (mouseover)="showDetails(slot)"
           (mouseout)="hideDetails()"
         >
