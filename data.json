@@ -5,9 +5,9 @@
       "startDate": "2025-01-01",
       "endDate": "2025-01-31",
       "days": [
-        "Poniedziałek",
-        "Środa",
-        "Piątek"
+        "poniedziałek",
+        "środa",
+        "piątek"
       ],
       "timeRanges": [
         {
@@ -25,11 +25,11 @@
       "startDate": "2025-02-01",
       "endDate": "2025-02-09",
       "days": [
-        "Poniedziałek",
-        "Wtorek",
-        "Środa",
-        "Czwartek",
-        "Piątek"
+        "poniedziałek",
+        "wtorek",
+        "środa",
+        "czwartek",
+        "piątek"
       ],
       "timeRanges": [
         {
@@ -43,26 +43,12 @@
       ]
     },
     {
-      "id": "b7d8",
-      "startDate": "2025-01-07",
-      "endDate": "2025-01-07",
-      "days": [
-        "wtorek"
-      ],
-      "timeRanges": [
-        {
-          "start": "08:00",
-          "end": "11:00"
-        }
-      ]
-    },
-    {
       "id": "5431",
       "startDate": "2025-01-11",
       "endDate": "2025-01-12",
       "days": [
-        "Sobota",
-        "Niedziela"
+        "sobota",
+        "niedziela"
       ],
       "timeRanges": [
         {
@@ -80,8 +66,8 @@
       "startDate": "2025-01-18",
       "endDate": "2025-01-20",
       "days": [
-        "Sobota",
-        "Niedziela"
+        "sobota",
+        "niedziela"
       ],
       "timeRanges": [
         {
@@ -93,17 +79,31 @@
           "end": "13:00"
         }
       ]
+    },
+    {
+      "id": "fcce",
+      "startDate": "2025-01-07",
+      "endDate": "2025-01-07",
+      "days": [
+        "wtorek"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "11:00"
+        }
+      ]
     }
   ],
   "appointments": [
     {
-      "id": 1,
+      "id": "c0ad",
       "date": "2025-01-08",
       "time": "08:30",
       "type": "Recepta"
     },
     {
-      "id": 2,
+      "id": "c0ea",
       "date": "2025-01-08",
       "time": "09:00",
       "type": "Pierwsza wizyta"
@@ -113,6 +113,36 @@
       "date": "2025-01-08",
       "time": "09:30",
       "type": "Wizyta kontrolna"
+    },
+    {
+      "id": "20d4",
+      "date": "2025-01-06",
+      "time": "08:00",
+      "type": "Wizyta kontrolna"
+    },
+    {
+      "id": "f6fb",
+      "date": "2025-01-06",
+      "time": "08:30",
+      "type": "Wizyta kontrolna"
+    },
+    {
+      "id": "f383",
+      "date": "2025-01-06",
+      "time": "09:30",
+      "type": "Recepta"
+    },
+    {
+      "id": "10c7",
+      "date": "2025-01-06",
+      "time": "09:00",
+      "type": "Pierwsza wizyta"
+    },
+    {
+      "id": "00cc",
+      "date": "2025-01-07",
+      "time": "10:30",
+      "type": "Pierwsza wizyta"
     }
   ]
 }

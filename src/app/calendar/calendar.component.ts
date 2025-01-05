@@ -53,12 +53,49 @@ export class CalendarComponent implements OnInit {
     console.log('CalendarComponent został zainicjowany.');
   }
 
+  currentTimeMarker: { dayKey: string; slotIndex: number | null } | null = null;
+
   ngOnInit(): void {
     this.initializeWeek(); // Zainicjalizowanie bieżącego tygodnia
     this.loadData(); // Wczytanie danych dostępności i rezerwacji
+
+    // Inicjalizacja dynamicznego znacznika czasu
+    this.updateCurrentTimeMarker();
+    setInterval(() => {
+      this.updateCurrentTimeMarker();
+    }, 60000); // Odświeżanie co minutę
   }
   
+  updateCurrentTimeMarker(): void {
+    const now = new Date();
+    const nowDayKey = this.getDayKey(now);
   
+    // Sprawdź, czy dzisiejszy dzień jest widoczny w kalendarzu
+    if (this.currentWeek.some((day) => this.getDayKey(day) === nowDayKey)) {
+      const slots = this.slotsPerDay[nowDayKey] || [];
+      let slotIndex: number | null = null;
+  
+      // Znajdź slot, w którym znajduje się bieżący czas
+      slots.forEach((slot, index) => {
+        const [hour, minute] = slot.time.split(':').map(Number);
+        const slotStart = new Date(now);
+        slotStart.setHours(hour, minute, 0, 0);
+        const slotEnd = new Date(slotStart);
+        slotEnd.setMinutes(slotEnd.getMinutes() + 30); // Zakładamy 30-minutowe sloty
+  
+        if (now >= slotStart && now < slotEnd) {
+          slotIndex = index;
+        }
+      });
+  
+      this.currentTimeMarker = slotIndex !== null ? { dayKey: nowDayKey, slotIndex } : null;
+    } else {
+      this.currentTimeMarker = null; // Jeśli dzień nie jest widoczny
+    }
+  
+    console.log('Aktualny znacznik czasu:', this.currentTimeMarker);
+  }
+
   loadData(): void {
     this.dataService.getAvailability().subscribe({
       next: (availability) => {
@@ -94,13 +131,13 @@ export class CalendarComponent implements OnInit {
 
   getDayName(date: Date): string {
     const days = [
-      'Niedziela',
-      'Poniedziałek',
-      'Wtorek',
-      'Środa',
-      'Czwartek',
-      'Piątek',
-      'Sobota',
+      'niedziela',
+      'poniedziałek',
+      'wtorek',
+      'środa',
+      'czwartek',
+      'piątek',
+      'sobota',
     ];
     return days[date.getDay()];
   }
@@ -116,8 +153,9 @@ export class CalendarComponent implements OnInit {
   
       // Filtruj dostępności na podstawie daty i dnia tygodnia
       const availabilityForDay = this.availability?.filter((avail: any) => {
-        const isWithinDateRange =
-          new Date(avail.startDate) <= date && new Date(avail.endDate) >= date;
+        const isWithinDateRange = 
+          new Date(avail.startDate) <= date &&
+          new Date(avail.endDate).setHours(23, 59, 59, 999) >= date.getTime();
         const isDayIncluded = avail.days.includes(dayName);
   
         console.log(
@@ -177,6 +215,7 @@ export class CalendarComponent implements OnInit {
       console.log(`- Wygenerowane sloty dla dnia ${dayKey}:`, this.slotsPerDay[dayKey]);
     });
   }
+  
 
   getRandomVisitType(): VisitType {
     const types: VisitType[] = ['Pierwsza wizyta', 'Wizyta kontrolna', 'Choroba przewlekła', 'Recepta'];

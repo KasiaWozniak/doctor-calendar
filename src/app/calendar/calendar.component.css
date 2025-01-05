@@ -121,3 +121,23 @@
     color: #a0a0a0;
   }
 
+  .time-slot.current-time {
+    border: 2px solid red;
+    position: relative;
+  }
+  
+  .time-slot.current-time::after {
+    content: '⏱';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  

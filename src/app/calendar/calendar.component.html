@@ -29,8 +29,12 @@
   
         <div
           class="time-slot"
-          *ngFor="let slot of slotsPerDay[getDayKey(day)]"
+          *ngFor="let slot of slotsPerDay[getDayKey(day)]; let i = index"
           [style.background-color]="getSlotColor(slot.type)"
+          [class.current-time]="
+            currentTimeMarker?.dayKey === getDayKey(day) &&
+            currentTimeMarker?.slotIndex === i
+          "
           [class.reserved]="slot.reserved"
           [class.past]="slot.past || isPastDay(day)"
           (click)="!slot.reserved && !isPastDay(day) ? reserveSlot(day, slot) : null"
