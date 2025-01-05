@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DataService } from '../services/data.service';
+
 
 @Component({
   selector: 'app-availability',
@@ -37,6 +39,8 @@ export class AvailabilityComponent {
     date: '',
     timeRange: { start: '', end: '' },
   };
+
+  constructor(private dataService: DataService) {}
 
   updateMinEndDate() {
     // Jeśli data końcowa jest wcześniejsza niż data początkowa, resetujemy datę końcową
@@ -91,15 +95,52 @@ export class AvailabilityComponent {
     }
   }
 
-  // Obsługa cyklicznej dostępności
-  defineCyclicAvailability() {
-    console.log('Cykliczna dostępność:', this.cyclicAvailability);
-    // TODO: Dodaj logikę zapisywania cyklicznej dostępności
+  saveCyclicAvailability(): void {
+    const availability = {
+      startDate: this.cyclicAvailability.startDate,
+      endDate: this.cyclicAvailability.endDate,
+      days: Object.keys(this.cyclicAvailability.days).filter(
+        (day) => this.cyclicAvailability.days[day]
+      ),
+      timeRanges: [...this.cyclicAvailability.timeRanges],
+    };
+  
+    this.dataService.addAvailability(availability).subscribe({
+      next: () => {
+        console.log('Cykliczna dostępność zapisana.');
+        alert('Dostępność została zapisana.');
+      },
+      error: (err) => {
+        console.error('Błąd zapisu dostępności:', err);
+      },
+    });
   }
+  
+  saveSingleAvailability(): void {
+    const availability = {
+      startDate: this.singleAvailability.date,
+      endDate: this.singleAvailability.date,
+      days: [new Date(this.singleAvailability.date).toLocaleDateString('pl-PL', { weekday: 'long' })],
+      timeRanges: [this.singleAvailability.timeRange],
+    };
+  
+    this.dataService.addAvailability(availability).subscribe({
+      next: () => {
+        console.log('Jednorazowa dostępność zapisana.');
+        alert('Dostępność została zapisana.');
+      },
+      error: (err) => {
+        console.error('Błąd zapisu dostępności:', err);
+      },
+    });
+  }
+  
 
-  // Obsługa jednorazowej dostępności
-  defineSingleAvailability() {
-    console.log('Jednorazowa dostępność:', this.singleAvailability);
-    // TODO: Dodaj logikę zapisywania jednorazowej dostępności
-  }
+    // Metoda do obsługi przesyłania formularza
+    addAvailability(): void {
+      this.dataService.addAvailability(this.cyclicAvailability).subscribe(response => {
+        console.log('Nowa dostępność została zapisana:', response);
+        alert('Dostępność została zapisana!');
+      });
+    }
 }

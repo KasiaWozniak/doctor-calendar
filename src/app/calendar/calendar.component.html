@@ -33,7 +33,7 @@
           [style.background-color]="getSlotColor(slot.type)"
           [class.reserved]="slot.reserved"
           [class.past]="slot.past || isPastDay(day)"
-          (click)="!slot.reserved && !isPastDay(day) ? reserveSlot(day, slot, 'Pierwsza wizyta') : null"
+          (click)="!slot.reserved && !isPastDay(day) ? reserveSlot(day, slot) : null"
           (mouseover)="showDetails(slot)"
           (mouseout)="hideDetails()"
         >

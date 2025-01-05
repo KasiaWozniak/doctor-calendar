@@ -7,7 +7,7 @@ type VisitType = 'Pierwsza wizyta' | 'Wizyta kontrolna' | 'Choroba przewlekła' 
 interface TimeSlot {
   time: string;
   reserved: boolean;
-  type: VisitType | null; // typ konsultacji (np. "Porada")
+  type: VisitType; // typ konsultacji (np. "Porada")
   details?: string; // szczegóły wizyty
   past: boolean; // czy slot jest w przeszłości
   available?: boolean; // czy slot jest dostępny
@@ -54,21 +54,37 @@ export class CalendarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadData(); // Wywołanie metody loadData
-    console.log('Sloty czasowe po generowaniu:', this.slotsPerDay);
+    this.initializeWeek(); // Zainicjalizowanie bieżącego tygodnia
+    this.loadData(); // Wczytanie danych dostępności i rezerwacji
   }
-
-  // Pobieranie danych z pliku JSON
+  
+  
   loadData(): void {
-    this.dataService.getData().subscribe((data) => {
-      this.availability = data.availability;
-      this.appointments = data.appointments;
-      console.log('Dane załadowane z pliku JSON:', data); // Debugowanie
-      this.initializeWeek();
-      this.generateSlots();
+    this.dataService.getAvailability().subscribe({
+      next: (availability) => {
+        this.availability = availability;
+        this.dataService.getAppointments().subscribe({
+          next: (appointments: Appointment[]) => {
+            this.appointments = appointments;
+            this.generateSlots(); // Generowanie slotów po załadowaniu danych
+          },
+          error: (error) => console.error('Błąd ładowania rezerwacji:', error),
+        });
+      },
+      error: (error) => console.error('Błąd ładowania dostępności:', error),
     });
   }
   
+  
+  saveAppointments(appointment: Appointment): void {
+    this.dataService.addAppointment(appointment).subscribe({
+      next: () => console.log('Rezerwacja zapisana.'),
+      error: (error) => console.error('Błąd zapisu rezerwacji:', error),
+    });
+  }
+  
+  
+
   initializeWeek(): void {
     const today = new Date();
     const firstDay = new Date(today.setDate(today.getDate() - today.getDay() + 1)); // Poniedziałek
@@ -89,25 +105,41 @@ export class CalendarComponent implements OnInit {
     return days[date.getDay()];
   }
   
-  
-
   generateSlots() {
-    console.log('Rozpoczęcie generowania slotów...');
+    console.log('Generowanie slotów dla tygodnia:', this.currentWeek);
+  
     this.currentWeek.forEach((date) => {
       const dayKey = this.getDayKey(date);
       const dayName = this.getDayName(date);
   
-      console.log(`Przetwarzanie dnia: ${dayName} (${dayKey})`);
+      console.log(`Przetwarzanie dnia: ${dayKey} (${dayName})`);
   
+      // Filtruj dostępności na podstawie daty i dnia tygodnia
       const availabilityForDay = this.availability?.filter((avail: any) => {
-        const isWithinDateRange = new Date(avail.startDate) <= date && new Date(avail.endDate) >= date;
+        const isWithinDateRange =
+          new Date(avail.startDate) <= date && new Date(avail.endDate) >= date;
         const isDayIncluded = avail.days.includes(dayName);
+  
+        console.log(
+          `- Sprawdzana dostępność:`,
+          avail,
+          `Zakres dat: ${isWithinDateRange}, Dzień: ${isDayIncluded}`
+        );
+  
         return isWithinDateRange && isDayIncluded;
       });
   
+      console.log(`- Filtrowana dostępność dla dnia ${dayKey}:`, availabilityForDay);
+  
+      // Jeśli brak dostępności, przejdź do następnego dnia
+      if (!availabilityForDay || availabilityForDay.length === 0) {
+        console.log(`Brak dostępności dla dnia ${dayKey}`);
+        return;
+      }
+  
       this.slotsPerDay[dayKey] = []; // Reset slotów dla danego dnia
   
-      availabilityForDay?.forEach((avail: any) => {
+      availabilityForDay.forEach((avail: any) => {
         avail.timeRanges.forEach((range: { start: string; end: string }) => {
           const [startHour, startMinutes] = range.start.split(':').map(Number);
           const [endHour, endMinutes] = range.end.split(':').map(Number);
@@ -118,44 +150,70 @@ export class CalendarComponent implements OnInit {
           while (currentTime < endTime) {
             const hour = Math.floor(currentTime / 60);
             const minutes = currentTime % 60;
-            const slotTime = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            const slotTime = `${hour.toString().padStart(2, '0')}:${minutes
+              .toString()
+              .padStart(2, '0')}`;
+  
+            const isReserved = this.appointments?.some(
+              (app: any) => app.date === dayKey && app.time === slotTime
+            );
   
             this.slotsPerDay[dayKey].push({
               time: slotTime,
-              reserved: false,
-              type: null,
+              reserved: isReserved,
+              type: isReserved
+                ? this.appointments.find(
+                    (app: any) => app.date === dayKey && app.time === slotTime
+                  ).type
+                : null,
               past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
             });
   
-            currentTime += 30; // Dodanie 30 minut
+            currentTime += 30; // Sloty co 30 minut
           }
         });
       });
   
-      console.log(`Wygenerowane sloty dla dnia ${dayKey}:`, this.slotsPerDay[dayKey]);
+      console.log(`- Wygenerowane sloty dla dnia ${dayKey}:`, this.slotsPerDay[dayKey]);
     });
   }
-  
-  
 
-  reserveSlot(day: Date, slot: TimeSlot, type: VisitType): void {
+  getRandomVisitType(): VisitType {
+    const types: VisitType[] = ['Pierwsza wizyta', 'Wizyta kontrolna', 'Choroba przewlekła', 'Recepta'];
+    return types[Math.floor(Math.random() * types.length)];
+  }  
+
+  reserveSlot(day: Date, slot: TimeSlot): void {
     if (this.isPastDay(day)) {
       return; // Uniemożliwienie rezerwacji
     }
     const dayKey = this.getDayKey(day);
-    const slots = this.slotsPerDay[dayKey];
-    const targetSlot = slots.find((s) => s.time === slot.time);
-    if (targetSlot) {
+    const targetSlot = this.slotsPerDay[dayKey]?.find((s) => s.time === slot.time);
+    if (targetSlot && !targetSlot.reserved) {
+      const randomType = this.getRandomVisitType();
+      const newAppointment: Appointment = {
+        date: dayKey,
+        time: targetSlot.time,
+        type: randomType,
+      };
+  
       targetSlot.reserved = true;
-      targetSlot.type = type;
-      targetSlot.details = `Rodzaj wizyty: ${type}, godzina: ${slot.time}`;
+      targetSlot.type = randomType;
+      targetSlot.details = `Rodzaj wizyty: ${randomType}, godzina: ${slot.time}`;
+  
+      this.saveAppointments(newAppointment); // Zapisz rezerwację
     }
   }
+  
+  
 
   getSlotColor(type: string | null): string {
     return type && type in this.visitTypes ? this.visitTypes[type as VisitType] : 'white';
   }
   
+  getSlotType(slot: TimeSlot): VisitType {
+    return slot.type;
+  }
 
   showDetails(slot: TimeSlot): void {
     this.selectedDetails = slot.details || 'Brak szczegółów';
@@ -178,8 +236,10 @@ export class CalendarComponent implements OnInit {
   
   getReservedSlotsCount(day: Date): number {
     const dayKey = this.getDayKey(day);
-    return this.slotsPerDay[dayKey].filter(slot => slot.reserved).length;
+    const slots = this.slotsPerDay[dayKey] || []; // Jeśli brak slotów, ustaw pustą tablicę
+    return slots.filter(slot => slot.reserved).length;
   }
+  
   
   isPastDay(date: Date): boolean {
     const today = new Date();

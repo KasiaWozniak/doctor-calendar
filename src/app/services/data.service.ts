@@ -6,13 +6,31 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class DataService {
-  private dataUrl = 'assets/data.json'; // Ścieżka do pliku JSON
+  private apiUrl = 'http://localhost:3000'; // Podstawowy URL
 
-  constructor(private http: HttpClient) {
-    console.log('DataService został zainicjowany.');
-  }
+  constructor(private http: HttpClient) {}
 
   getData(): Observable<any> {
-    return this.http.get(this.dataUrl);
+    return this.http.get<any>(`${this.apiUrl}/availability`); // Jeśli dane dotyczą dostępności
+  }
+
+  saveAppointment(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/appointments`, data);
+  }
+  
+  addAppointment(appointment: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/appointments`, appointment);
+  }  
+
+  addAvailability(availability: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/availability`, availability);
+  }
+
+  getAvailability(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/availability`); // Pobieranie dostępności
+  }
+  
+  getAppointments(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/appointments`); // Pobieranie rezerwacji
   }
 }

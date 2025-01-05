@@ -1,0 +1,118 @@
+{
+  "availability": [
+    {
+      "id": "1",
+      "startDate": "2025-01-01",
+      "endDate": "2025-01-31",
+      "days": [
+        "Poniedziałek",
+        "Środa",
+        "Piątek"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "12:00",
+          "end": "14:00"
+        }
+      ]
+    },
+    {
+      "id": "b130",
+      "startDate": "2025-02-01",
+      "endDate": "2025-02-09",
+      "days": [
+        "Poniedziałek",
+        "Wtorek",
+        "Środa",
+        "Czwartek",
+        "Piątek"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "12:00",
+          "end": "14:00"
+        }
+      ]
+    },
+    {
+      "id": "b7d8",
+      "startDate": "2025-01-07",
+      "endDate": "2025-01-07",
+      "days": [
+        "wtorek"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "11:00"
+        }
+      ]
+    },
+    {
+      "id": "5431",
+      "startDate": "2025-01-11",
+      "endDate": "2025-01-12",
+      "days": [
+        "Sobota",
+        "Niedziela"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "09:00"
+        },
+        {
+          "start": "09:00",
+          "end": "10:00"
+        }
+      ]
+    },
+    {
+      "id": "5af3",
+      "startDate": "2025-01-18",
+      "endDate": "2025-01-20",
+      "days": [
+        "Sobota",
+        "Niedziela"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "11:30"
+        },
+        {
+          "start": "11:30",
+          "end": "13:00"
+        }
+      ]
+    }
+  ],
+  "appointments": [
+    {
+      "id": 1,
+      "date": "2025-01-08",
+      "time": "08:30",
+      "type": "Recepta"
+    },
+    {
+      "id": 2,
+      "date": "2025-01-08",
+      "time": "09:00",
+      "type": "Pierwsza wizyta"
+    },
+    {
+      "id": "c0ed",
+      "date": "2025-01-08",
+      "time": "09:30",
+      "type": "Wizyta kontrolna"
+    }
+  ]
+}
