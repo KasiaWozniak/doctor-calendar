@@ -1,0 +1,31 @@
+<div class="absence-container">
+    <h2>Dodaj nieobecność</h2>
+    <form (ngSubmit)="addAbsence()">
+      <label>
+        Data początkowa:
+        <input type="date" [(ngModel)]="newAbsence.startDate" name="startDate" required />
+      </label>
+      <label>
+        Data końcowa:
+        <input type="date" [(ngModel)]="newAbsence.endDate" name="endDate" required />
+      </label>
+      <button type="submit">Dodaj</button>
+    </form>
+  
+    <h2>Lista nieobecności</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Data początkowa</th>
+          <th>Data końcowa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let absence of absences">
+          <td>{{ absence.startDate }}</td>
+          <td>{{ absence.endDate }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  

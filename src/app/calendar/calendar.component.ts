@@ -7,7 +7,7 @@ type VisitType = 'Pierwsza wizyta' | 'Wizyta kontrolna' | 'Choroba przewlekła' 
 interface TimeSlot {
   time: string;
   reserved: boolean;
-  type: VisitType; // typ konsultacji (np. "Porada")
+  type: VisitType | 'Termin niedostępny'; // typ konsultacji (np. "Porada")
   details?: string; // szczegóły wizyty
   past: boolean; // czy slot jest w przeszłości
   available?: boolean; // czy slot jest dostępny
@@ -24,6 +24,7 @@ interface Appointment {
   date: string;
   time: string;
   type: VisitType;
+  status?: string;
 }
 
 
@@ -41,6 +42,7 @@ export class CalendarComponent implements OnInit {
   availability: any;
   appointments: any;
   selectedDetails: string | null = null;
+  absences: { startDate: string; endDate: string }[] = [];
 
   visitTypes: Record<VisitType, string> = {
     'Pierwsza wizyta': 'blue',
@@ -103,7 +105,14 @@ export class CalendarComponent implements OnInit {
         this.dataService.getAppointments().subscribe({
           next: (appointments: Appointment[]) => {
             this.appointments = appointments;
-            this.generateSlots(); // Generowanie slotów po załadowaniu danych
+            this.dataService.getAbsences().subscribe({
+              next: (absences) => {
+                this.absences = absences;
+                this.checkConflictsWithAbsences(); // Wywołanie metody sprawdzającej konflikty
+                this.generateSlots(); // Generowanie slotów po załadowaniu wszystkich danych
+              },
+              error: (error) => console.error('Błąd ładowania absencji:', error),
+            });
           },
           error: (error) => console.error('Błąd ładowania rezerwacji:', error),
         });
@@ -112,7 +121,6 @@ export class CalendarComponent implements OnInit {
     });
   }
   
-  
   saveAppointments(appointment: Appointment): void {
     this.dataService.addAppointment(appointment).subscribe({
       next: () => console.log('Rezerwacja zapisana.'),
@@ -120,8 +128,6 @@ export class CalendarComponent implements OnInit {
     });
   }
   
-  
-
   initializeWeek(): void {
     const today = new Date();
     const firstDay = new Date(today.setDate(today.getDate() - today.getDay() + 1)); // Poniedziałek
@@ -142,6 +148,15 @@ export class CalendarComponent implements OnInit {
     return days[date.getDay()];
   }
   
+  isAbsenceDay(day: Date): boolean {
+    return this.absences.some(absence => {
+      const startDate = new Date(absence.startDate);
+      const endDate = new Date(absence.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      return startDate <= day && endDate >= day;
+    });
+  }
+  
   generateSlots() {
     console.log('Generowanie slotów dla tygodnia:', this.currentWeek);
   
@@ -151,9 +166,25 @@ export class CalendarComponent implements OnInit {
   
       console.log(`Przetwarzanie dnia: ${dayKey} (${dayName})`);
   
-      // Filtruj dostępności na podstawie daty i dnia tygodnia
+      // Sprawdź, czy dzień jest dniem absencji
+      const isAbsenceDay = this.absences.some((absence) => {
+        const absenceStart = new Date(absence.startDate);
+        const absenceEnd = new Date(absence.endDate);
+        absenceEnd.setHours(23, 59, 59, 999); // Uwzględnienie całego dnia
+        return absenceStart <= date && absenceEnd >= date;
+      });
+  
+      if (isAbsenceDay) {
+        // Jeśli to dzień absencji, pomiń generowanie slotów
+        console.log(`Dzień absencji: ${dayKey} - sloty nie zostaną wygenerowane.`);
+        this.slotsPerDay[dayKey] = []; // Upewnij się, że dla tego dnia sloty są puste
+        return;
+      }
+      
+  
+      // Normalne generowanie slotów dostępności
       const availabilityForDay = this.availability?.filter((avail: any) => {
-        const isWithinDateRange = 
+        const isWithinDateRange =
           new Date(avail.startDate) <= date &&
           new Date(avail.endDate).setHours(23, 59, 59, 999) >= date.getTime();
         const isDayIncluded = avail.days.includes(dayName);
@@ -169,7 +200,6 @@ export class CalendarComponent implements OnInit {
   
       console.log(`- Filtrowana dostępność dla dnia ${dayKey}:`, availabilityForDay);
   
-      // Jeśli brak dostępności, przejdź do następnego dnia
       if (!availabilityForDay || availabilityForDay.length === 0) {
         console.log(`Brak dostępności dla dnia ${dayKey}`);
         return;
@@ -192,20 +222,27 @@ export class CalendarComponent implements OnInit {
               .toString()
               .padStart(2, '0')}`;
   
-            const isReserved = this.appointments?.some(
-              (app: any) => app.date === dayKey && app.time === slotTime
-            );
-  
-            this.slotsPerDay[dayKey].push({
-              time: slotTime,
-              reserved: isReserved,
-              type: isReserved
-                ? this.appointments.find(
-                    (app: any) => app.date === dayKey && app.time === slotTime
-                  ).type
-                : null,
-              past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
-            });
+              const isReserved = this.appointments?.some((app: any) => {
+                return app.date === dayKey && app.time === slotTime;
+              });
+              
+              const reservedAppointment = this.appointments?.find((app: any) => {
+                return app.date === dayKey && app.time === slotTime;
+              });
+              
+              this.slotsPerDay[dayKey].push({
+                time: slotTime,
+                reserved: !!reservedAppointment,
+                type: reservedAppointment ? reservedAppointment.type : null,
+                details: reservedAppointment?.status === 'odwołana' 
+                  ? 'Konsultacja odwołana' 
+                  : reservedAppointment 
+                    ? `Rodzaj wizyty: ${reservedAppointment.type}, godzina: ${slotTime}` 
+                    : undefined,
+                past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
+                available: reservedAppointment?.status !== 'odwołana',
+              });
+              
   
             currentTime += 30; // Sloty co 30 minut
           }
@@ -226,6 +263,11 @@ export class CalendarComponent implements OnInit {
     if (this.isPastDay(day)) {
       return; // Uniemożliwienie rezerwacji
     }
+    if (this.isAbsenceDay(day)) {
+      console.warn('Nie można zarezerwować slotu w dniu absencji.');
+      return; // Blokowanie rezerwacji w dniu absencji
+    }
+
     const dayKey = this.getDayKey(day);
     const targetSlot = this.slotsPerDay[dayKey]?.find((s) => s.time === slot.time);
     if (targetSlot && !targetSlot.reserved) {
@@ -234,6 +276,7 @@ export class CalendarComponent implements OnInit {
         date: dayKey,
         time: targetSlot.time,
         type: randomType,
+        status: '', // Domyślnie puste pole status
       };
   
       targetSlot.reserved = true;
@@ -243,16 +286,14 @@ export class CalendarComponent implements OnInit {
       this.saveAppointments(newAppointment); // Zapisz rezerwację
     }
   }
-  
-  
 
   getSlotColor(type: string | null): string {
     return type && type in this.visitTypes ? this.visitTypes[type as VisitType] : 'white';
   }
   
-  getSlotType(slot: TimeSlot): VisitType {
+  getSlotType(slot: TimeSlot): VisitType | "Termin niedostępny" {
     return slot.type;
-  }
+  }  
 
   showDetails(slot: TimeSlot): void {
     this.selectedDetails = slot.details || 'Brak szczegółów';
@@ -279,11 +320,34 @@ export class CalendarComponent implements OnInit {
     return slots.filter(slot => slot.reserved).length;
   }
   
-  
   isPastDay(date: Date): boolean {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Ustawienie początku dnia
     return date.getTime() < today.getTime();
+  }
+  
+  // Metoda do sprawdzania konfliktów między absencjami a konsultacjami
+  checkConflictsWithAbsences(): void {
+    this.absences.forEach((absence) => {
+      const absenceStart = new Date(absence.startDate);
+      const absenceEnd = new Date(absence.endDate);
+      absenceEnd.setHours(23, 59, 59, 999);
+  
+      this.appointments.forEach((appointment: any) => {
+        const appointmentDate = new Date(appointment.date);
+  
+        if (appointmentDate >= absenceStart && appointmentDate <= absenceEnd) {
+          // Zmień status na "odwołana", jeśli występuje konflikt z absencją
+          appointment.status = 'odwołana';
+  
+          // Zaktualizuj w bazie danych
+          this.dataService.updateAppointment(appointment).subscribe({
+            next: () => console.log(`Zmieniono status wizyty: ${appointment.id}`),
+            error: (err) => console.error('Błąd podczas aktualizacji wizyty:', err),
+          });
+        }
+      });
+    });
   }
   
 }

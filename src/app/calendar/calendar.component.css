@@ -141,3 +141,25 @@
     align-items: center;
   }
   
+  .absence-day {
+    background-color: red;
+    color: white;
+  }
+  
+  .day-column.absence-day .time-slot {
+    background-color: red; /* lub inny kolor dla absencji */
+    color: white;
+    pointer-events: none; /* Blokowanie kliknięć */
+  }
+  
+  .day-column.absence-day .day-header {
+    background-color: darkred;
+    color: white;
+  }
+  
+  .time-slot.canceled {
+    background-color: #ffcccc; /* Czerwony odcień dla odwołanych konsultacji */
+    color: #900; /* Ciemny tekst */
+    text-decoration: line-through; /* Przekreślenie tekstu */
+  }
+  

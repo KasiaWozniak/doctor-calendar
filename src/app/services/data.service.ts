@@ -33,4 +33,29 @@ export class DataService {
   getAppointments(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/appointments`); // Pobieranie rezerwacji
   }
+
+  getAbsences(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/absences`);
+  }
+  
+  addAbsence(absence: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/absences`, absence);
+  }
+  
+  updateAppointmentStatus(appointmentId: string, status: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/appointments/${appointmentId}`, { status });
+  }
+  
+  updateAppointment(appointment: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/appointments/${appointment.id}`, appointment);
+  }
+  
+  deleteAbsence(date: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/absences/${date}`);
+  }
+
+  updateAbsence(absences: any[]): Observable<any> {
+    return this.http.put(`${this.apiUrl}/absences`, absences);
+  }
+
 }

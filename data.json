@@ -1,4 +1,11 @@
 {
+  "absences": [
+    {
+      "id": "1",
+      "startDate": "2025-01-15",
+      "endDate": "2025-01-17"
+    }
+  ],
   "availability": [
     {
       "id": "1",
@@ -6,8 +13,7 @@
       "endDate": "2025-01-31",
       "days": [
         "poniedziałek",
-        "środa",
-        "piątek"
+        "środa"
       ],
       "timeRanges": [
         {
@@ -17,66 +23,6 @@
         {
           "start": "12:00",
           "end": "14:00"
-        }
-      ]
-    },
-    {
-      "id": "b130",
-      "startDate": "2025-02-01",
-      "endDate": "2025-02-09",
-      "days": [
-        "poniedziałek",
-        "wtorek",
-        "środa",
-        "czwartek",
-        "piątek"
-      ],
-      "timeRanges": [
-        {
-          "start": "08:00",
-          "end": "12:00"
-        },
-        {
-          "start": "12:00",
-          "end": "14:00"
-        }
-      ]
-    },
-    {
-      "id": "5431",
-      "startDate": "2025-01-11",
-      "endDate": "2025-01-12",
-      "days": [
-        "sobota",
-        "niedziela"
-      ],
-      "timeRanges": [
-        {
-          "start": "08:00",
-          "end": "09:00"
-        },
-        {
-          "start": "09:00",
-          "end": "10:00"
-        }
-      ]
-    },
-    {
-      "id": "5af3",
-      "startDate": "2025-01-18",
-      "endDate": "2025-01-20",
-      "days": [
-        "sobota",
-        "niedziela"
-      ],
-      "timeRanges": [
-        {
-          "start": "08:00",
-          "end": "11:30"
-        },
-        {
-          "start": "11:30",
-          "end": "13:00"
         }
       ]
     },
@@ -91,6 +37,55 @@
         {
           "start": "08:00",
           "end": "11:00"
+        }
+      ]
+    },
+    {
+      "id": "ec2a",
+      "startDate": "2025-01-31",
+      "endDate": "2025-01-31",
+      "days": [
+        "piątek"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "14:00"
+        }
+      ]
+    },
+    {
+      "id": "acf1",
+      "startDate": "2025-01-10",
+      "endDate": "2025-01-13",
+      "days": [
+        "poniedziałek",
+        "piątek",
+        "sobota",
+        "niedziela"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "10:00"
+        },
+        {
+          "start": "10:00",
+          "end": "14:00"
+        }
+      ]
+    },
+    {
+      "id": "9d55",
+      "startDate": "2025-01-13",
+      "endDate": "2025-01-13",
+      "days": [
+        "poniedziałek"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "14:00"
         }
       ]
     }
@@ -121,28 +116,59 @@
       "type": "Wizyta kontrolna"
     },
     {
-      "id": "f6fb",
-      "date": "2025-01-06",
-      "time": "08:30",
-      "type": "Wizyta kontrolna"
+      "id": "08e6",
+      "date": "2025-01-08",
+      "time": "10:00",
+      "type": "Pierwsza wizyta"
     },
     {
-      "id": "f383",
-      "date": "2025-01-06",
-      "time": "09:30",
+      "id": "1274",
+      "date": "2025-01-08",
+      "time": "10:30",
       "type": "Recepta"
     },
     {
-      "id": "10c7",
-      "date": "2025-01-06",
-      "time": "09:00",
+      "id": "3b7a",
+      "date": "2025-01-08",
+      "time": "11:00",
+      "type": "Wizyta kontrolna"
+    },
+    {
+      "id": "18a4",
+      "date": "2025-01-08",
+      "time": "11:30",
+      "type": "Wizyta kontrolna"
+    },
+    {
+      "id": "8570",
+      "date": "2025-01-08",
+      "time": "12:00",
       "type": "Pierwsza wizyta"
     },
     {
-      "id": "00cc",
-      "date": "2025-01-07",
-      "time": "10:30",
-      "type": "Pierwsza wizyta"
+      "id": "4c9a",
+      "date": "2025-01-08",
+      "time": "12:30",
+      "type": "Choroba przewlekła"
+    },
+    {
+      "id": "f629",
+      "date": "2025-01-08",
+      "time": "08:00",
+      "type": "Recepta"
+    },
+    {
+      "id": "52f5",
+      "date": "2025-01-08",
+      "time": "13:00",
+      "type": "Choroba przewlekła"
+    },
+    {
+      "id": "143f",
+      "date": "2025-01-13",
+      "time": "08:30",
+      "type": "Pierwsza wizyta",
+      "status": "zarezerwowane"
     }
   ]
 }

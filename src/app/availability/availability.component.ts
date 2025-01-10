@@ -95,23 +95,102 @@ export class AvailabilityComponent {
     }
   }
 
+  absences: { startDate: string; endDate: string }[] = [];
+
+  ngOnInit(): void {
+    this.dataService.getAbsences().subscribe({
+      next: (absences) => {
+        this.absences = absences;
+      },
+      error: (error) => console.error('Błąd ładowania absencji:', error),
+    });
+  }
+  
+  private getDatesInRange(startDate: Date, endDate: Date, daysOfWeek: string[] = []): string[] {
+    const dates: string[] = [];
+    let currentDate = new Date(startDate);
+  
+    while (currentDate <= endDate) {
+      const dayName = currentDate
+        .toLocaleDateString('pl-PL', { weekday: 'long' })
+        .toLowerCase();
+      if (daysOfWeek.length === 0 || daysOfWeek.includes(dayName)) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  
+    return dates;
+  }
+  
+
   saveCyclicAvailability(): void {
     const availability = {
       startDate: this.cyclicAvailability.startDate,
       endDate: this.cyclicAvailability.endDate,
-      days: Object.keys(this.cyclicAvailability.days).filter(
-        (day) => this.cyclicAvailability.days[day]
-      ),
+      days: Object.keys(this.cyclicAvailability.days)
+        .filter((day) => this.cyclicAvailability.days[day])
+        .map((day) => day.toLowerCase()), // Zamiana dni na małe litery
       timeRanges: [...this.cyclicAvailability.timeRanges],
     };
   
-    this.dataService.addAvailability(availability).subscribe({
-      next: () => {
-        console.log('Cykliczna dostępność zapisana.');
-        alert('Dostępność została zapisana.');
+    // Sprawdź kolizje z absencjami
+    this.dataService.getAbsences().subscribe({
+      next: (absences) => {
+        const newAvailabilityDates = this.getDatesInRange(
+          new Date(availability.startDate),
+          new Date(availability.endDate),
+          availability.days
+        );
+  
+        // Usuń kolidujące absencje
+        absences.forEach((absence: { startDate: string; endDate: string }) => {
+          const absenceDates = this.getDatesInRange(
+            new Date(absence.startDate),
+            new Date(absence.endDate)
+          );
+  
+          const overlappingDates = absenceDates.filter((date) =>
+            newAvailabilityDates.includes(date)
+          );
+  
+          overlappingDates.forEach((date) => {
+            // Usuń absencję
+            this.dataService.deleteAbsence(date).subscribe(() => {
+              console.log(`Usunięto absencję dla dnia ${date}`);
+            });
+  
+            // Przywróć rezerwacje dla dnia
+            this.dataService.getAppointments().subscribe((appointments) => {
+              appointments
+                .filter((appointment: any) => appointment.date === date)
+                .forEach((appointment: any) => {
+                  if (appointment.status === 'odwołana') {
+                    appointment.status = 'zarezerwowane';
+                    this.dataService.updateAppointment(appointment).subscribe(() => {
+                      console.log(
+                        `Przywrócono rezerwację dla dnia ${appointment.date} o godzinie ${appointment.time}`
+                      );
+                    });
+                  }
+                });
+            });
+          });
+        });
+  
+        // Zapisz nową dostępność
+        this.dataService.addAvailability(availability).subscribe({
+          next: () => {
+            console.log('Cykliczna dostępność zapisana.');
+            alert('Dostępność została zapisana.');
+          },
+          error: (err) => {
+            console.error('Błąd zapisu dostępności:', err);
+          },
+        });
       },
       error: (err) => {
-        console.error('Błąd zapisu dostępności:', err);
+        console.error('Błąd pobierania absencji:', err);
       },
     });
   }
@@ -120,17 +199,85 @@ export class AvailabilityComponent {
     const availability = {
       startDate: this.singleAvailability.date,
       endDate: this.singleAvailability.date,
-      days: [new Date(this.singleAvailability.date).toLocaleDateString('pl-PL', { weekday: 'long' })],
+      days: [new Date(this.singleAvailability.date).toLocaleDateString('pl-PL', { weekday: 'long' }).toLowerCase()],
       timeRanges: [this.singleAvailability.timeRange],
     };
   
-    this.dataService.addAvailability(availability).subscribe({
-      next: () => {
-        console.log('Jednorazowa dostępność zapisana.');
-        alert('Dostępność została zapisana.');
+    // Usuń konfliktującą absencję i przywróć rezerwacje
+    const singleDay = this.singleAvailability.date;
+    this.dataService.getAbsences().subscribe({
+      next: (absences) => {
+        const targetAbsence = absences.find((absence: { startDate: string; endDate: string }) => {
+          const absenceStart = new Date(absence.startDate);
+          const absenceEnd = new Date(absence.endDate);
+          absenceEnd.setHours(23, 59, 59, 999);
+          return absenceStart <= new Date(singleDay) && absenceEnd >= new Date(singleDay);
+        });
+  
+        if (targetAbsence) {
+          const absenceStart = new Date(targetAbsence.startDate);
+          const absenceEnd = new Date(targetAbsence.endDate);
+  
+          if (absenceStart.toISOString().split('T')[0] === absenceEnd.toISOString().split('T')[0]) {
+            // Absencja tylko na ten dzień – usuń całą absencję
+            this.dataService.deleteAbsence(targetAbsence.id).subscribe(() => {
+              console.log('Usunięto absencję pokrywającą się z jednorazową dostępnością.');
+            });
+          } else if (absenceStart.toISOString().split('T')[0] === singleDay) {
+            // Jeśli to początek absencji, przesuń początek absencji
+            targetAbsence.startDate = new Date(new Date(singleDay).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            this.dataService.updateAbsence(targetAbsence).subscribe(() => {
+              console.log('Zaktualizowano początek absencji.');
+            });
+          } else if (absenceEnd.toISOString().split('T')[0] === singleDay) {
+            // Jeśli to koniec absencji, przesuń koniec absencji
+            targetAbsence.endDate = new Date(new Date(singleDay).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            this.dataService.updateAbsence(targetAbsence).subscribe(() => {
+              console.log('Zaktualizowano koniec absencji.');
+            });
+          } else {
+            // Jeśli dzień jest w środku absencji, podziel absencję na dwie części
+            const newAbsence = {
+              ...targetAbsence,
+              startDate: new Date(new Date(singleDay).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            };
+            targetAbsence.endDate = new Date(new Date(singleDay).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            this.dataService.updateAbsence(targetAbsence).subscribe(() => {
+              console.log('Zaktualizowano koniec oryginalnej absencji.');
+              this.dataService.addAbsence(newAbsence).subscribe(() => {
+                console.log('Dodano nową absencję.');
+              });
+            });
+          }
+        }
+  
+        // Przywróć odwołane rezerwacje
+        this.dataService.getAppointments().subscribe((appointments) => {
+          appointments
+            .filter((appointment: any) => appointment.date === singleDay && appointment.status === 'odwołana')
+            .forEach((appointment: any) => {
+              appointment.status = 'zarezerwowane';
+              this.dataService.updateAppointment(appointment).subscribe(() => {
+                console.log(
+                  `Przywrócono rezerwację dla dnia ${appointment.date} o godzinie ${appointment.time}`
+                );
+              });
+            });
+        });
+  
+        // Zapisz dostępność jednorazową
+        this.dataService.addAvailability(availability).subscribe({
+          next: () => {
+            console.log('Jednorazowa dostępność zapisana.');
+            alert('Dostępność została zapisana.');
+          },
+          error: (err) => {
+            console.error('Błąd zapisu dostępności:', err);
+          },
+        });
       },
       error: (err) => {
-        console.error('Błąd zapisu dostępności:', err);
+        console.error('Błąd pobierania absencji:', err);
       },
     });
   }

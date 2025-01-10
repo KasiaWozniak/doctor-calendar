@@ -7,6 +7,7 @@ import { RouterModule, Router } from '@angular/router';
   imports: [RouterModule],
   template: `
     <div class="navigation-buttons">
+      <button (click)="navigateTo('absence')">Definiowanie absencji</button>
       <button (click)="navigateTo('availability')">Definiowanie dostępności</button>
       <button (click)="navigateTo('calendar')">Kalendarz</button>
     </div>

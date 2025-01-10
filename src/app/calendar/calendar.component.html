@@ -18,12 +18,18 @@
       <div class="day-column" *ngFor="let day of currentWeek">
         <div
           class="day-header"
+            [class.absence-day]="isAbsenceDay(day)"
             [class.today]="day.toDateString() === today.toDateString()"
             [class.past-day]="isPastDay(day)"
           >
           <div>{{ day | date: 'EEE, MMM d' }}</div>
           <div>
-            Zarezerwowane: {{ getReservedSlotsCount(day) }}
+            <ng-container *ngIf="isAbsenceDay(day); else reservedCount">
+              Nieobecność lekarza
+            </ng-container>
+            <ng-template #reservedCount>
+              Zarezerwowane: {{ getReservedSlotsCount(day) }}
+            </ng-template>
           </div>
         </div>
   
@@ -37,12 +43,16 @@
           "
           [class.reserved]="slot.reserved"
           [class.past]="slot.past || isPastDay(day)"
-          (click)="!slot.reserved && !isPastDay(day) ? reserveSlot(day, slot) : null"
+          [class.absence-day]="isAbsenceDay(day)"
+          (click)="!slot.reserved && !isPastDay(day) && !isAbsenceDay(day) ? reserveSlot(day, slot) : null"
           (mouseover)="showDetails(slot)"
           (mouseout)="hideDetails()"
         >
+        <span *ngIf="slot.type === 'Termin niedostępny'">Termin niedostępny</span>
         <span *ngIf="!slot.reserved">Zarezerwuj wizytę</span>
-        <span *ngIf="slot.reserved">Termin zarezerwowany</span>        </div>
+        <span *ngIf="slot.details === 'Konsultacja odwołana'">Konsultacja odwołana</span>
+        <span *ngIf="slot.reserved">Termin zarezerwowany</span>        
+      </div>
       </div>
     </div>
   
