@@ -95,79 +95,105 @@
       "id": "c0ad",
       "date": "2025-01-08",
       "time": "08:30",
-      "type": "Recepta"
+      "type": "Recepta",
+      "status": "zarezerwowane"
     },
     {
       "id": "c0ea",
       "date": "2025-01-08",
       "time": "09:00",
-      "type": "Pierwsza wizyta"
+      "type": "Pierwsza wizyta",
+      "status": "zarezerwowane"
     },
     {
       "id": "c0ed",
       "date": "2025-01-08",
       "time": "09:30",
-      "type": "Wizyta kontrolna"
+      "type": "Wizyta kontrolna",
+      "status": "zarezerwowane"
     },
     {
       "id": "20d4",
       "date": "2025-01-06",
       "time": "08:00",
-      "type": "Wizyta kontrolna"
+      "type": "Wizyta kontrolna",
+      "status": "zarezerwowane"
     },
     {
       "id": "08e6",
       "date": "2025-01-08",
       "time": "10:00",
-      "type": "Pierwsza wizyta"
+      "type": "Pierwsza wizyta",
+      "status": "zarezerwowane"
     },
     {
       "id": "1274",
       "date": "2025-01-08",
       "time": "10:30",
-      "type": "Recepta"
+      "type": "Recepta",
+      "status": "zarezerwowane"
     },
     {
       "id": "3b7a",
       "date": "2025-01-08",
       "time": "11:00",
-      "type": "Wizyta kontrolna"
+      "type": "Wizyta kontrolna",
+      "status": "zarezerwowane"
     },
     {
       "id": "18a4",
       "date": "2025-01-08",
       "time": "11:30",
-      "type": "Wizyta kontrolna"
+      "type": "Wizyta kontrolna",
+      "status": "zarezerwowane"
     },
     {
       "id": "8570",
       "date": "2025-01-08",
       "time": "12:00",
-      "type": "Pierwsza wizyta"
+      "type": "Pierwsza wizyta",
+      "status": "zarezerwowane"
     },
     {
       "id": "4c9a",
       "date": "2025-01-08",
       "time": "12:30",
-      "type": "Choroba przewlekła"
+      "type": "Choroba przewlekła",
+      "status": "zarezerwowane"
     },
     {
       "id": "f629",
       "date": "2025-01-08",
       "time": "08:00",
-      "type": "Recepta"
+      "type": "Recepta",
+      "status": "zarezerwowane"
     },
     {
       "id": "52f5",
       "date": "2025-01-08",
       "time": "13:00",
-      "type": "Choroba przewlekła"
+      "type": "Choroba przewlekła",
+      "status": "zarezerwowane"
     },
     {
       "id": "143f",
       "date": "2025-01-13",
       "time": "08:30",
       "type": "Pierwsza wizyta",
+      "status": "zarezerwowane"
+    },
+    {
+      "id": "cfe7",
+      "date": "2025-01-22",
+      "time": "08:00",
+      "type": "Choroba przewlekła",
+      "status": "zarezerwowane"
+    },
+    {
+      "id": "18d5",
+      "date": "2025-01-22",
+      "time": "10:00",
+      "type": "Wizyta kontrolna",
       "status": "zarezerwowane"
     }
   ]

@@ -221,26 +221,28 @@ export class CalendarComponent implements OnInit {
             const slotTime = `${hour.toString().padStart(2, '0')}:${minutes
               .toString()
               .padStart(2, '0')}`;
-  
-              const isReserved = this.appointments?.some((app: any) => {
-                return app.date === dayKey && app.time === slotTime;
-              });
-              
+                
               const reservedAppointment = this.appointments?.find((app: any) => {
                 return app.date === dayKey && app.time === slotTime;
               });
+
+              const isReserved = !!reservedAppointment; // Czy slot jest zarezerwowany
+                       // Sprawdzenie statusu
+              const isCancelled = reservedAppointment?.status === 'odwołana';
+              const isReservedStatus =
+                reservedAppointment?.status === 'zarezerwowane' || reservedAppointment?.status === '';
               
               this.slotsPerDay[dayKey].push({
                 time: slotTime,
-                reserved: !!reservedAppointment,
+                reserved: isReserved,
                 type: reservedAppointment ? reservedAppointment.type : null,
-                details: reservedAppointment?.status === 'odwołana' 
-                  ? 'Konsultacja odwołana' 
-                  : reservedAppointment 
-                    ? `Rodzaj wizyty: ${reservedAppointment.type}, godzina: ${slotTime}` 
-                    : undefined,
+                details: isCancelled
+                  ? 'Konsultacja odwołana'
+                  : isReserved
+                  ? `Rodzaj wizyty: ${reservedAppointment.type}, godzina: ${slotTime}`
+                  : undefined,
                 past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
-                available: reservedAppointment?.status !== 'odwołana',
+                available: !isCancelled, // Niedostępne, jeśli jest odwołane
               });
               
   
@@ -276,7 +278,7 @@ export class CalendarComponent implements OnInit {
         date: dayKey,
         time: targetSlot.time,
         type: randomType,
-        status: '', // Domyślnie puste pole status
+        status: 'zarezerwowane', // Domyślnie puste pole status
       };
   
       targetSlot.reserved = true;
