@@ -27,7 +27,12 @@ interface Appointment {
   date: string;
   time: string;
   type: VisitType;
-  status?: string;
+  status: string;
+  duration: number; // Czas trwania wizyty w minutach
+  patientName: string; // Imię i nazwisko pacjenta
+  patientGender: string; // Płeć pacjenta ("Mężczyzna" lub "Kobieta")
+  patientAge: number; // Wiek pacjenta
+  notes: string; // Informacje dodatkowe dla lekarza
 }
 
 
@@ -74,11 +79,64 @@ export class CalendarComponent implements OnInit {
   }
     
   saveConsultation(data: any): void {
-    // Obsłuż zapis konsultacji tutaj
-    console.log('Dane konsultacji:', data);
-    this.closeConsultationForm();
+    if (!this.selectedSlot) return;
+  
+    const slotsToReserve = Math.ceil(data.duration / 30); // Liczba slotów (zaokrąglenie w górę)
+    const dayKey = this.selectedSlot.date.toISOString().split('T')[0];
+    const slotIndex = this.slotsPerDay[dayKey]?.findIndex(slot => slot.time === this.selectedSlot!.time);
+  
+    if (slotIndex === undefined || slotIndex < 0) {
+      console.error('Nie znaleziono wybranego slotu');
+      return;
+    }
+  
+    // Sprawdź, czy wszystkie potrzebne sloty są dostępne
+    const isAvailable = this.slotsPerDay[dayKey]
+      ?.slice(slotIndex, slotIndex + slotsToReserve)
+      .every(slot => slot && !slot.reserved);
+  
+    if (!isAvailable) {
+      alert('Wybrana długość wizyty koliduje z innymi rezerwacjami.');
+      return;
+    }
+  
+    // Oznacz sloty jako zajęte
+    for (let i = 0; i < slotsToReserve; i++) {
+      const targetSlot = this.slotsPerDay[dayKey][slotIndex + i];
+      if (targetSlot) {
+        targetSlot.reserved = true;
+        targetSlot.type = data.type;
+        targetSlot.details = `Zarezerwowane: ${data.type}`;
+      }
+    }
+  
+    // Zapisz wizytę
+    const newAppointment = {
+      date: dayKey,
+      time: this.selectedSlot.time,
+      type: data.type,
+      status: 'zarezerwowane',
+      duration: data.duration,
+      patientName: data.patientName,
+      patientGender: data.patientGender,
+      patientAge: data.patientAge,
+      notes: data.notes,
+    };
+  
+    this.dataService.addAppointment(newAppointment).subscribe({
+      next: () => {
+        console.log('Wizyta została zapisana:', newAppointment);
+        this.closeConsultationForm(); // Zamknięcie formularza
+        this.loadData(); // Odświeżenie kalendarza
+      },
+      error: (err) => {
+        console.error('Błąd zapisu wizyty:', err);
+        alert('Nie udało się zapisać wizyty. Spróbuj ponownie.');
+      },
+    });
   }
-
+  
+  
   ngOnInit(): void {
     this.initializeWeek(); // Zainicjalizowanie bieżącego tygodnia
     this.loadData(); // Wczytanie danych dostępności i rezerwacji
@@ -197,12 +255,10 @@ export class CalendarComponent implements OnInit {
       });
   
       if (isAbsenceDay) {
-        // Jeśli to dzień absencji, pomiń generowanie slotów
         console.log(`Dzień absencji: ${dayKey} - sloty nie zostaną wygenerowane.`);
         this.slotsPerDay[dayKey] = []; // Upewnij się, że dla tego dnia sloty są puste
         return;
       }
-      
   
       // Normalne generowanie slotów dostępności
       const availabilityForDay = this.availability?.filter((avail: any) => {
@@ -243,33 +299,53 @@ export class CalendarComponent implements OnInit {
             const slotTime = `${hour.toString().padStart(2, '0')}:${minutes
               .toString()
               .padStart(2, '0')}`;
-                
-              const reservedAppointment = this.appointments?.find((app: any) => {
-                return app.date === dayKey && app.time === slotTime;
-              });
-
-              const isReserved = !!reservedAppointment; // Czy slot jest zarezerwowany
-                       // Sprawdzenie statusu
-              const isCancelled = reservedAppointment?.status === 'odwołana';
-              const isReservedStatus =
-                reservedAppointment?.status === 'zarezerwowane' || reservedAppointment?.status === '';
-              
+  
+            const reservedAppointment = this.appointments?.find((app: any) => {
+              return app.date === dayKey && app.time === slotTime;
+            });
+  
+            const isReserved = !!reservedAppointment;
+  
+            // Jeżeli rezerwacja zajmuje wiele slotów, oznacz kolejne sloty jako zajęte
+            if (isReserved && reservedAppointment.duration) {
+              const slotsToReserve = Math.ceil(reservedAppointment.duration / 30);
+              for (let i = 0; i < slotsToReserve; i++) {
+                const extraSlotTime = new Date(date);
+                extraSlotTime.setHours(hour, minutes + i * 30);
+                const extraSlotTimeString = `${extraSlotTime
+                  .getHours()
+                  .toString()
+                  .padStart(2, '0')}:${extraSlotTime
+                  .getMinutes()
+                  .toString()
+                  .padStart(2, '0')}`;
+  
+                this.slotsPerDay[dayKey].push({
+                  date: dayKey,
+                  time: extraSlotTimeString,
+                  reserved: true,
+                  type: reservedAppointment.type,
+                  details: `Zarezerwowane: ${reservedAppointment.type}`,
+                  past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
+                  available: false,
+                });
+              }
+              currentTime += slotsToReserve * 30; // Przesunięcie czasu o długość wizyty
+            } else {
               this.slotsPerDay[dayKey].push({
-                date: dayKey, // Przypisanie wartości date
+                date: dayKey,
                 time: slotTime,
                 reserved: isReserved,
                 type: reservedAppointment ? reservedAppointment.type : null,
-                details: isCancelled
-                  ? 'Konsultacja odwołana'
-                  : isReserved
-                  ? `Rodzaj wizyty: ${reservedAppointment.type}, godzina: ${slotTime}`
+                details: reservedAppointment
+                  ? `Zarezerwowane: ${reservedAppointment.type}`
                   : undefined,
                 past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
-                available: !isCancelled, // Niedostępne, jeśli jest odwołane
+                available: true,
               });
-              
   
-            currentTime += 30; // Sloty co 30 minut
+              currentTime += 30; // Sloty co 30 minut
+            }
           }
         });
       });
@@ -278,39 +354,38 @@ export class CalendarComponent implements OnInit {
     });
   }
   
-
   getRandomVisitType(): VisitType {
     const types: VisitType[] = ['Pierwsza wizyta', 'Wizyta kontrolna', 'Choroba przewlekła', 'Recepta'];
     return types[Math.floor(Math.random() * types.length)];
   }  
 
-  reserveSlot(day: Date, slot: TimeSlot): void {
-    if (this.isPastDay(day)) {
-      return; // Uniemożliwienie rezerwacji
-    }
-    if (this.isAbsenceDay(day)) {
-      console.warn('Nie można zarezerwować slotu w dniu absencji.');
-      return; // Blokowanie rezerwacji w dniu absencji
-    }
+  // reserveSlot(day: Date, slot: TimeSlot): void {
+  //   if (this.isPastDay(day)) {
+  //     return; // Uniemożliwienie rezerwacji
+  //   }
+  //   if (this.isAbsenceDay(day)) {
+  //     console.warn('Nie można zarezerwować slotu w dniu absencji.');
+  //     return; // Blokowanie rezerwacji w dniu absencji
+  //   }
 
-    const dayKey = this.getDayKey(day);
-    const targetSlot = this.slotsPerDay[dayKey]?.find((s) => s.time === slot.time);
-    if (targetSlot && !targetSlot.reserved) {
-      const randomType = this.getRandomVisitType();
-      const newAppointment: Appointment = {
-        date: dayKey,
-        time: targetSlot.time,
-        type: randomType,
-        status: 'zarezerwowane', // Domyślnie puste pole status
-      };
+  //   const dayKey = this.getDayKey(day);
+  //   const targetSlot = this.slotsPerDay[dayKey]?.find((s) => s.time === slot.time);
+  //   if (targetSlot && !targetSlot.reserved) {
+  //     const randomType = this.getRandomVisitType();
+  //     const newAppointment: Appointment = {
+  //       date: dayKey,
+  //       time: targetSlot.time,
+  //       type: randomType,
+  //       status: 'zarezerwowane', // Domyślnie puste pole status
+  //     };
   
-      targetSlot.reserved = true;
-      targetSlot.type = randomType;
-      targetSlot.details = `Rodzaj wizyty: ${randomType}, godzina: ${slot.time}`;
+  //     targetSlot.reserved = true;
+  //     targetSlot.type = randomType;
+  //     targetSlot.details = `Rodzaj wizyty: ${randomType}, godzina: ${slot.time}`;
   
-      this.saveAppointments(newAppointment); // Zapisz rezerwację
-    }
-  }
+  //     this.saveAppointments(newAppointment); // Zapisz rezerwację
+  //   }
+  // }
 
   getSlotColor(type: string | null): string {
     return type && type in this.visitTypes ? this.visitTypes[type as VisitType] : 'white';

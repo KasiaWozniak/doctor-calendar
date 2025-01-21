@@ -88,6 +88,20 @@
           "end": "14:00"
         }
       ]
+    },
+    {
+      "id": "592f",
+      "startDate": "2025-01-21",
+      "endDate": "2025-01-21",
+      "days": [
+        "wtorek"
+      ],
+      "timeRanges": [
+        {
+          "start": "08:00",
+          "end": "14:00"
+        }
+      ]
     }
   ],
   "appointments": [
@@ -195,6 +209,32 @@
       "time": "10:00",
       "type": "Wizyta kontrolna",
       "status": "zarezerwowane"
+    },
+    {
+      "id": "bcc5",
+      "date": "2025-01-21",
+      "time": "08:00",
+      "type": "Pierwsza wizyta",
+      "status": "zarezerwowane"
+    },
+    {
+      "id": "7d76",
+      "date": "2025-01-21",
+      "time": "08:30",
+      "type": "Wizyta kontrolna",
+      "status": "zarezerwowane"
+    },
+    {
+      "id": "2714",
+      "date": "2025-01-22",
+      "time": "08:30",
+      "type": "Wizyta kontrolna",
+      "status": "zarezerwowane",
+      "duration": "90",
+      "patientName": "Jan Kowalski",
+      "patientGender": "Mężczyzna",
+      "patientAge": 33,
+      "notes": ""
     }
   ]
 }

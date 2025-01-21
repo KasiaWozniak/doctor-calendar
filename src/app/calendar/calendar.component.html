@@ -68,11 +68,14 @@
       </div>
       <!-- Formularz rezerwacji -->
       <app-consultation-form
-          [slot]="selectedSlot"
-          (close)="closeConsultationForm()"
+        *ngIf="selectedSlot"
+        [slot]="selectedSlot"
+        (close)="closeConsultationForm()"
+        (save)="saveConsultation($event)"
       ></app-consultation-form>
+
   </div>
 </div>
-  </div>
+</div>
 
   
