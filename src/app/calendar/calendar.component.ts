@@ -183,23 +183,24 @@ export class CalendarComponent implements OnInit {
       next: (availability) => {
         this.availability = availability;
         this.dataService.getAppointments().subscribe({
-          next: (appointments: Appointment[]) => {
+          next: (appointments) => {
             this.appointments = appointments;
             this.dataService.getAbsences().subscribe({
               next: (absences) => {
                 this.absences = absences;
-                this.checkConflictsWithAbsences(); // Wywołanie metody sprawdzającej konflikty
-                this.generateSlots(); // Generowanie slotów po załadowaniu wszystkich danych
+                this.checkConflictsWithAbsences(); // Sprawdź konflikty
+                this.generateSlots(); // Ponownie wygeneruj sloty
               },
               error: (error) => console.error('Błąd ładowania absencji:', error),
             });
           },
-          error: (error) => console.error('Błąd ładowania rezerwacji:', error),
+          error: (error) => console.error('Błąd ładowania wizyt:', error),
         });
       },
       error: (error) => console.error('Błąd ładowania dostępności:', error),
     });
   }
+  
   
   saveAppointments(appointment: Appointment): void {
     this.dataService.addAppointment(appointment).subscribe({
@@ -301,7 +302,11 @@ export class CalendarComponent implements OnInit {
               .padStart(2, '0')}`;
   
             const reservedAppointment = this.appointments?.find((app: any) => {
-              return app.date === dayKey && app.time === slotTime;
+              return (
+                app.date === dayKey &&
+                app.time === slotTime &&
+                (app.status === 'zarezerwowane' || app.status === 'opłacone') // Uwzględnij obydwa statusy
+              );
             });
   
             const isReserved = !!reservedAppointment;
@@ -325,7 +330,7 @@ export class CalendarComponent implements OnInit {
                   time: extraSlotTimeString,
                   reserved: true,
                   type: reservedAppointment.type,
-                  details: `Zarezerwowane: ${reservedAppointment.type}`,
+                  details: `Rodzaj wizyty: ${reservedAppointment.type} (${reservedAppointment.status})`,
                   past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
                   available: false,
                 });
@@ -338,7 +343,7 @@ export class CalendarComponent implements OnInit {
                 reserved: isReserved,
                 type: reservedAppointment ? reservedAppointment.type : null,
                 details: reservedAppointment
-                  ? `Zarezerwowane: ${reservedAppointment.type}`
+                ? `Rodzaj wizyty: ${reservedAppointment.type} (${reservedAppointment.status})`
                   : undefined,
                 past: date.getTime() + currentTime * 60 * 1000 < new Date().getTime(),
                 available: true,
@@ -354,10 +359,10 @@ export class CalendarComponent implements OnInit {
     });
   }
   
-  getRandomVisitType(): VisitType {
-    const types: VisitType[] = ['Pierwsza wizyta', 'Wizyta kontrolna', 'Choroba przewlekła', 'Recepta'];
-    return types[Math.floor(Math.random() * types.length)];
-  }  
+  // getRandomVisitType(): VisitType {
+  //   const types: VisitType[] = ['Pierwsza wizyta', 'Wizyta kontrolna', 'Choroba przewlekła', 'Recepta'];
+  //   return types[Math.floor(Math.random() * types.length)];
+  // }  
 
   // reserveSlot(day: Date, slot: TimeSlot): void {
   //   if (this.isPastDay(day)) {

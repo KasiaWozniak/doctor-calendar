@@ -58,4 +58,9 @@ export class DataService {
     return this.http.put(`${this.apiUrl}/absences`, absences);
   }
 
+  deleteAppointment(appointmentId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/appointments/${appointmentId}`);
+  }
+  
+
 }

@@ -26,3 +26,27 @@
     transform: scale(0.95);
   }
   
+  .app-container {
+    position: relative;
+  }
+  
+  .navigation-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .cart-button {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .cart-button img {
+    width: 35px; /* Ustaw rozmiar obrazka */
+    height: 35px;
+  }
+  

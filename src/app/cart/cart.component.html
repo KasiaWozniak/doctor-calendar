@@ -1,0 +1,63 @@
+<div class="cart-container">
+  <div class="cart-left">
+    <h2>Koszyk</h2>
+    <div *ngIf="appointments.length > 0; else emptyCart">
+      <div *ngFor="let appointment of appointments" class="appointment-item">
+        <p>
+          <strong>Data:</strong> {{ appointment.date }}<br />
+          <strong>Godzina:</strong> {{ appointment.time }}<br />
+          <strong>Typ wizyty:</strong> {{ appointment.type }}<br />
+          <strong>Czas trwania:</strong> {{ appointment.duration }} minut
+        </p>
+        <button (click)="removeAppointment(appointment.id)" class="remove-button">
+          Usuń
+        </button>
+      </div>
+    </div>
+    <ng-template #emptyCart>
+      <p>Brak wizyt w koszyku.</p>
+    </ng-template>
+  </div>
+
+  <div class="cart-right">
+    <h2>Proces płatności</h2>
+    <p><strong>Suma do zapłaty:</strong> {{ totalCost}} zł</p>
+    <form (submit)="processPayment()">
+      <label>
+        <strong>Rodzaj płatności:</strong>
+        <select [(ngModel)]="paymentDetails.method" name="paymentMethod" required>
+          <option value="Karta kredytowa">Karta kredytowa</option>
+          <option value="Blik">Blik</option>
+          <option value="Przelew bankowy">Przelew bankowy</option>
+        </select>
+      </label>
+
+      <label>
+        <strong>Dane płatnika:</strong>
+        <input
+          type="text"
+          [(ngModel)]="paymentDetails.payerName"
+          name="payerName"
+          placeholder="Imię i nazwisko"
+          required
+        />
+      </label>
+
+      <label>
+        <strong>{{ paymentDetails.method === 'Blik' ? 'Kod BLIK' : 'Numer karty' }}:</strong>
+        <input
+          type="text"
+          [(ngModel)]="paymentDetails.cardNumber"
+          name="cardNumber"
+          [placeholder]="paymentDetails.method === 'Blik' ? 'Wprowadź 6 cyfr' : 'Wprowadź 26 cyfr'"
+          [maxLength]="paymentDetails.method === 'Blik' ? 6 : 26"
+          pattern="{{ paymentDetails.method === 'Blik' ? '\\d{6}' : '\\d{26}' }}"
+          required
+        />
+      </label>
+      
+
+      <button type="submit" class="pay-button">Zapłać</button>
+    </form>
+  </div>
+</div>
