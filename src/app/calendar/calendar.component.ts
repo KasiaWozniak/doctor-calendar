@@ -1,10 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataService } from '../services/data.service';
+import { ConsultationFormComponent } from '../consultation-form/consultation-form.component';
+
 
 type VisitType = 'Pierwsza wizyta' | 'Wizyta kontrolna' | 'Choroba przewlekła' | 'Recepta';
 
 interface TimeSlot {
+  date: string; // Dodano date
   time: string;
   reserved: boolean;
   type: VisitType | 'Termin niedostępny'; // typ konsultacji (np. "Porada")
@@ -31,7 +34,7 @@ interface Appointment {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ConsultationFormComponent],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.css']
 })
@@ -43,6 +46,9 @@ export class CalendarComponent implements OnInit {
   appointments: any;
   selectedDetails: string | null = null;
   absences: { startDate: string; endDate: string }[] = [];
+  currentTimeMarker: { dayKey: string; slotIndex: number | null } | null = null;
+  showConsultationForm = false;
+  selectedSlot: { date: Date; time: string } | null = null;
 
   visitTypes: Record<VisitType, string> = {
     'Pierwsza wizyta': 'blue',
@@ -55,7 +61,23 @@ export class CalendarComponent implements OnInit {
     console.log('CalendarComponent został zainicjowany.');
   }
 
-  currentTimeMarker: { dayKey: string; slotIndex: number | null } | null = null;
+  openConsultationForm(day: Date, slot: TimeSlot): void {
+    this.selectedSlot = {
+      date: new Date(day), // Konwersja na obiekt Date
+      time: slot.time,
+    };
+  }
+    
+  closeConsultationForm(): void {
+    this.selectedSlot = null;
+    this.showConsultationForm = false;
+  }
+    
+  saveConsultation(data: any): void {
+    // Obsłuż zapis konsultacji tutaj
+    console.log('Dane konsultacji:', data);
+    this.closeConsultationForm();
+  }
 
   ngOnInit(): void {
     this.initializeWeek(); // Zainicjalizowanie bieżącego tygodnia
@@ -233,6 +255,7 @@ export class CalendarComponent implements OnInit {
                 reservedAppointment?.status === 'zarezerwowane' || reservedAppointment?.status === '';
               
               this.slotsPerDay[dayKey].push({
+                date: dayKey, // Przypisanie wartości date
                 time: slotTime,
                 reserved: isReserved,
                 type: reservedAppointment ? reservedAppointment.type : null,

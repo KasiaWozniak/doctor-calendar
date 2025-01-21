@@ -1,0 +1,69 @@
+<div class="modal-content">
+    <h2>Rezerwacja konsultacji</h2>
+    <p><strong>Data:</strong> {{ slot.date | date: 'fullDate' }}</p>
+    <p><strong>Godzina:</strong> {{ slot.time }}</p>
+
+    <form (ngSubmit)="saveConsultation()">
+        <label>
+            <strong>Długość konsultacji:</strong>
+            <select [(ngModel)]="consultationDetails.duration" name="duration" required>
+              <option [value]="30">30 minut</option>
+              <option [value]="60">1 godzina</option>
+              <option [value]="90">1 godzina 30 minut</option>
+              <option [value]="120">2 godziny</option>
+              <option [value]="150">2 godziny 30 minut</option>
+              <option [value]="180">3 godziny</option>
+            </select>
+          </label>
+          
+
+        <label>
+            <strong>Typ konsultacji:</strong>
+            <select [(ngModel)]="consultationDetails.type" name="type" required>
+                <option *ngFor="let type of visitTypes" [value]="type">{{ type }}</option>
+            </select>
+        </label>
+
+        <label>
+            <strong>Imię i nazwisko pacjenta:</strong>
+            <input
+                type="text"
+                [(ngModel)]="consultationDetails.patientName"
+                name="patientName"
+                required
+            />
+        </label>
+
+        <label>
+            <strong>Płeć pacjenta:</strong>
+            <select [(ngModel)]="consultationDetails.patientGender" name="patientGender" required>
+                <option value="Mężczyzna">Mężczyzna</option>
+                <option value="Kobieta">Kobieta</option>
+            </select>
+        </label>
+
+        <label>
+            <strong>Wiek pacjenta:</strong>
+            <input
+                type="number"
+                [(ngModel)]="consultationDetails.patientAge"
+                name="patientAge"
+                required
+                min="0"
+            />
+        </label>
+
+        <label>
+            <strong>Informacje dla lekarza:</strong>
+            <textarea
+                [(ngModel)]="consultationDetails.notes"
+                name="notes"
+            ></textarea>
+        </label>
+
+        <div class="form-buttons">
+            <button type="submit">Zapisz konsultację</button>
+            <button type="button" (click)="close.emit()">Anuluj</button>
+        </div>
+    </form>
+</div>
