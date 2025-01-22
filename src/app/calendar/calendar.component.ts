@@ -52,8 +52,17 @@ export class CalendarComponent implements OnInit {
   selectedDetails: string | null = null;
   absences: { startDate: string; endDate: string }[] = [];
   currentTimeMarker: { dayKey: string; slotIndex: number | null } | null = null;
-  showConsultationForm = false;
-  selectedSlot: { date: Date; time: string } | null = null;
+  showConsultationForm: boolean = false;
+  selectedSlot: {
+    date: Date;
+    time: string;
+    reserved?: boolean;
+    appointmentId?: string;
+    patientName?: string;
+    type?: string;
+  } | null = null;
+    showCancelDialog: boolean = false; // Widoczność okienka anulowania
+
 
   visitTypes: Record<VisitType, string> = {
     'Pierwsza wizyta': 'blue',
@@ -67,17 +76,35 @@ export class CalendarComponent implements OnInit {
   }
 
   openConsultationForm(day: Date, slot: TimeSlot): void {
-    this.selectedSlot = {
-      date: new Date(day), // Konwersja na obiekt Date
-      time: slot.time,
-    };
+    if (!slot) {
+      console.error('Slot jest pusty.');
+      return;
+    }
+  
+    if (slot.reserved) {
+      this.openCancelDialog(day, slot); // Wywołanie metody otwierającej dialog anulowania
+    } else {
+      this.selectedSlot = { date: new Date(day), time: slot.time, reserved: slot.reserved };
+      this.showConsultationForm = true;
+    }
   }
-    
+  
+  
   closeConsultationForm(): void {
-    this.selectedSlot = null;
+    this.selectedSlot = { date: new Date(), time: '' }; // Ustaw domyślną wartość
     this.showConsultationForm = false;
   }
-    
+  
+  
+  showDetails(slot: TimeSlot): void {
+    this.selectedDetails = slot.details || 'Brak szczegółów';
+  }
+  
+  hideDetails(): void {
+    this.selectedDetails = null;
+  }
+  
+
   saveConsultation(data: any): void {
     if (!this.selectedSlot) return;
   
@@ -136,6 +163,45 @@ export class CalendarComponent implements OnInit {
     });
   }
   
+  openCancelDialog(day: Date, slot: TimeSlot): void {
+    const appointment = this.appointments.find(
+      (appt: any) => appt.date === slot.date && appt.time === slot.time
+    );
+  
+    if (appointment) {
+      this.selectedSlot = {
+        date: new Date(day),
+        time: slot.time,
+        reserved: slot.reserved,
+        appointmentId: appointment.id,
+        patientName: appointment.patientName, // Przypisanie pacjenta
+        type: appointment.type, // Przypisanie typu wizyty
+      };
+      this.showCancelDialog = true;
+    }
+  }
+  
+  
+  closeCancelDialog(): void {
+    this.showCancelDialog = false;
+    this.selectedSlot = null; // Resetuj wybrany slot
+  }
+  
+  confirmCancelAppointment(): void {
+    if (this.selectedSlot?.appointmentId) {
+      this.dataService.deleteAppointment(this.selectedSlot.appointmentId).subscribe({
+        next: () => {
+          alert('Wizyta została anulowana.');
+          this.showCancelDialog = false;
+          this.loadData(); // Odśwież dane kalendarza
+        },
+        error: (err) => {
+          console.error('Błąd podczas anulowania wizyty:', err);
+          alert('Nie udało się anulować wizyty.');
+        },
+      });
+    }
+  }
   
   ngOnInit(): void {
     this.initializeWeek(); // Zainicjalizowanie bieżącego tygodnia
@@ -359,6 +425,27 @@ export class CalendarComponent implements OnInit {
     });
   }
   
+  cancelConsultation(appointmentId: string | undefined): void {
+    if (!appointmentId) {
+      alert('Nie można odwołać tej konsultacji, brak ID.');
+      return;
+    }
+  
+    if (confirm('Czy na pewno chcesz odwołać tę konsultację?')) {
+      this.dataService.deleteAppointment(appointmentId).subscribe({
+        next: () => {
+          alert('Konsultacja została odwołana.');
+          this.loadData(); // Odśwież dane kalendarza po odwołaniu
+        },
+        error: (err) => {
+          console.error('Błąd podczas odwoływania konsultacji:', err);
+          alert('Nie udało się odwołać konsultacji.');
+        },
+      });
+    }
+  }
+  
+  
   // getRandomVisitType(): VisitType {
   //   const types: VisitType[] = ['Pierwsza wizyta', 'Wizyta kontrolna', 'Choroba przewlekła', 'Recepta'];
   //   return types[Math.floor(Math.random() * types.length)];
@@ -398,14 +485,6 @@ export class CalendarComponent implements OnInit {
   
   getSlotType(slot: TimeSlot): VisitType | "Termin niedostępny" {
     return slot.type;
-  }  
-
-  showDetails(slot: TimeSlot): void {
-    this.selectedDetails = slot.details || 'Brak szczegółów';
-  }
-
-  hideDetails(): void {
-    this.selectedDetails = null;
   }
 
   navigateWeek(direction: number): void {

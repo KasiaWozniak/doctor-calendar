@@ -140,6 +140,18 @@
       "patientGender": "Mężczyzna",
       "patientAge": 66,
       "notes": ""
+    },
+    {
+      "id": "6fcb",
+      "date": "2025-01-22",
+      "time": "08:00",
+      "type": "Recepta",
+      "status": "zarezerwowane",
+      "duration": 30,
+      "patientName": "Jan Kowalski",
+      "patientGender": "Mężczyzna",
+      "patientAge": 55,
+      "notes": ""
     }
   ]
 }

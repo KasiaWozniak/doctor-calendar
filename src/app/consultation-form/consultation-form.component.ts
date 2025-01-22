@@ -39,4 +39,8 @@ export class ConsultationFormComponent {
     this.save.emit(this.consultationDetails);
     this.close.emit(); // Zamknij formularz po zapisaniu
   }
+
+  onSubmit(): void {
+    this.save.emit({}); // Emituj dane formularza
+  }
 }

@@ -44,7 +44,7 @@
           [class.reserved]="slot.reserved"
           [class.past]="slot.past || isPastDay(day)"
           [class.absence-day]="isAbsenceDay(day)"
-          (click)="!slot.reserved && !isPastDay(day) && !isAbsenceDay(day) ? openConsultationForm(day, slot) : null"
+          (click)="openConsultationForm(day, slot)"
           (mouseover)="showDetails(slot)"
           (mouseout)="hideDetails()"
         >
@@ -53,27 +53,48 @@
         <span *ngIf="slot.details === 'Konsultacja odwołana'">Konsultacja odwołana</span>
         <span *ngIf="slot.reserved">Termin zarezerwowany</span>        
       </div>
+      <!-- Modal okienko anulowania wizyty -->
+<div class="modal" *ngIf="showCancelDialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Anulowanie wizyty</h3>
+      <button class="close-button" (click)="closeCancelDialog()">×</button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Pacjent:</strong> {{ selectedSlot?.patientName }}</p>
+      <p><strong>Rodzaj wizyty:</strong> {{ selectedSlot?.type }}</p>
+      <p><strong>Data:</strong> {{ selectedSlot?.date }}</p>
+      <p><strong>Godzina:</strong> {{ selectedSlot?.time }}</p>
+      <p>Czy na pewno chcesz anulować tę wizytę?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeCancelDialog()">Anuluj</button>
+      <button class="confirm-button" (click)="confirmCancelAppointment()">Potwierdź</button>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   
-    <div class="details-popup" *ngIf="selectedDetails">
-      {{ selectedDetails }}
+    <div *ngIf="selectedDetails" class="details-popup">
+      <p><strong>Szczegóły konsultacji:</strong></p>
+      <p>{{ selectedDetails }}</p>
     </div>
 
-    <!-- Modal okienko -->
-<div class="modal" *ngIf="selectedSlot">
+<!-- Modal okienko -->
+<div class="modal" *ngIf="showConsultationForm">
   <div class="modal-content">
-      <div class="modal-close">
-          <button (click)="closeConsultationForm()">×</button>
-      </div>
-      <!-- Formularz rezerwacji -->
-      <app-consultation-form
-        *ngIf="selectedSlot"
-        [slot]="selectedSlot"
-        (close)="closeConsultationForm()"
-        (save)="saveConsultation($event)"
-      ></app-consultation-form>
-
+    <div class="modal-close">
+      <button (click)="closeConsultationForm()">×</button>
+    </div>
+    <!-- Formularz rezerwacji -->
+    <app-consultation-form
+    *ngIf="selectedSlot"
+    [slot]="selectedSlot"
+    (close)="closeConsultationForm()"
+    (save)="saveConsultation($event)"
+  ></app-consultation-form>
+  
   </div>
 </div>
 </div>

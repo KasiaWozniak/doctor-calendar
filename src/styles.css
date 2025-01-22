@@ -105,3 +105,16 @@
 .modal-content form label strong {
   font-weight: bold;
 }
+
+.cancel-button {
+  background-color: #f44336; /* Czerwony */
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-button:hover {
+  background-color: #d32f2f; /* Ciemniejszy czerwony */
+}

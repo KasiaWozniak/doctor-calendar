@@ -163,3 +163,92 @@
     text-decoration: line-through; /* Przekreślenie tekstu */
   }
   
+  .close-button,
+.modal-close button {
+  color: black; /* Czarny kolor tekstu */
+  font-size: 18px; /* Rozmiar tekstu */
+  background: white; /* Białe tło */
+  border: 2px solid black; /* Czarna ramka */
+  width: 30px; /* Szerokość przycisku */
+  height: 30px; /* Wysokość przycisku */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.close-button:hover,
+.modal-close button:hover {
+  background-color: black; /* Czarny kolor tła przy najechaniu */
+  color: white; /* Biały kolor tekstu przy najechaniu */
+}
+
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.15); /* Szary kolor z przezroczystością */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 90%;
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .modal-header h3 {
+    margin: 0;
+  }
+  
+  .modal-header .close-button {
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1;
+  }
+  
+  .modal-footer {
+    display: flex;
+    justify-content: center; /* Wyśrodkowanie przycisków */
+    gap: 20px; /* Odstęp między przyciskami */
+    margin-top: 20px; /* Odstęp od treści modalnego okna */
+  }
+  
+  .modal-footer button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007BFF; /* Niebieski kolor */
+    color: white;
+    transition: background-color 0.3s ease;
+  }
+  
+  .modal-footer button:hover {
+    background-color: #0056b3; /* Ciemniejszy niebieski przy najechaniu */
+  }
+  
+  .cancel-button {
+    background-color: #6c757d; /* Szary dla przycisku "Anuluj" */
+  }
+  
+  .cancel-button:hover {
+    background-color: #5a6268; /* Ciemniejszy szary przy najechaniu */
+  }
+  
