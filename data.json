@@ -211,7 +211,7 @@
       "date": "2025-01-22",
       "time": "08:00",
       "type": "Recepta",
-      "status": "zarezerwowane",
+      "status": "opłacone",
       "duration": 30,
       "patientName": "Jan Kowalski",
       "patientGender": "Kobieta",
@@ -223,11 +223,35 @@
       "date": "2025-01-23",
       "time": "08:00",
       "type": "Wizyta kontrolna",
-      "status": "zarezerwowane",
+      "status": "opłacone",
       "duration": 30,
       "patientName": "Jan Kowalski",
       "patientGender": "Mężczyzna",
       "patientAge": 77,
+      "notes": ""
+    },
+    {
+      "id": "79bf",
+      "date": "2025-01-23",
+      "time": "11:00",
+      "type": "Recepta",
+      "status": "opłacone",
+      "duration": "60",
+      "patientName": "Jan Kowalski",
+      "patientGender": "Mężczyzna",
+      "patientAge": 55,
+      "notes": ""
+    },
+    {
+      "id": "86e0",
+      "date": "2025-01-23",
+      "time": "09:00",
+      "type": "Choroba przewlekła",
+      "status": "opłacone",
+      "duration": "60",
+      "patientName": "Jan Kowalski",
+      "patientGender": "Mężczyzna",
+      "patientAge": 44,
       "notes": ""
     }
   ]

@@ -10,7 +10,7 @@ interface TimeSlot {
   date: string; // Dodano date
   time: string;
   reserved: boolean;
-  type: VisitType | 'Termin niedostępny' | 'Empty' ; // typ konsultacji (np. "Porada")
+  type: VisitType | 'Dostępny' | 'Termin niedostępny' | 'Empty' ; // typ konsultacji (np. "Porada")
   details?: string; // szczegóły wizyty
   past: boolean; // czy slot jest w przeszłości
   available?: boolean; // czy slot jest dostępny
@@ -104,83 +104,152 @@ export class CalendarComponent implements OnInit {
     this.selectedDetails = null;
   }
   
-
   saveConsultation(data: any): void {
-    if (!this.selectedSlot) return;
-  
-    const slotsToReserve = Math.ceil(data.duration / 30); // Liczba slotów (zaokrąglenie w górę)
+    if (!this.selectedSlot) {
+        alert('Nie wybrano slotu do rezerwacji.');
+        return;
+    }
+
+    const slotsToReserve = Math.ceil(data.duration / 30); // Liczba slotów do zajęcia
     const dayKey = this.selectedSlot.date.toISOString().split('T')[0];
     const slotIndex = this.slotsPerDay[dayKey]?.findIndex(slot => slot.time === this.selectedSlot!.time);
-  
+
     if (slotIndex === undefined || slotIndex < 0) {
-      console.error('Nie znaleziono wybranego slotu');
-      return;
+        alert('Nie znaleziono wybranego slotu.');
+        return;
     }
-  
-    // Sprawdź, czy wszystkie potrzebne sloty są dostępne
-    const isAvailable = this.slotsPerDay[dayKey]
-      ?.slice(slotIndex, slotIndex + slotsToReserve)
-      .every(slot => slot && !slot.reserved);
-  
+
+// Pobierz dostępność dla dnia
+const dayName = this.getDayName(this.selectedSlot!.date).toLowerCase(); // Normalizacja na małe litery
+const availabilityForDay = this.availability?.find((avail: any) =>
+    avail.days.map((day: string) => day.toLowerCase()).includes(dayName) && // Upewnij się, że dzień tygodnia pasuje
+    new Date(avail.startDate).setHours(0, 0, 0, 0) <= this.selectedSlot!.date.getTime() &&
+    new Date(avail.endDate).setHours(23, 59, 59, 999) >= this.selectedSlot!.date.getTime()
+);
+
+if (!availabilityForDay) {
+    alert('Brak dostępności dla wybranego dnia.');
+    return;
+}
+
+
+// Sprawdź, czy sloty mieszczą się w dostępności lekarza
+const startTime = this.selectedSlot.time;
+const slotsToCheck = this.slotsPerDay[dayKey]?.slice(slotIndex, slotIndex + slotsToReserve);
+
+if (!slotsToCheck || slotsToCheck.length < slotsToReserve) {
+    alert('Wizyta wykracza poza dostępność lekarza.');
+    return;
+}
+
+// Sprawdź, czy którykolwiek slot nachodzi na slot typu Empty
+const hasEmptySlot = slotsToCheck.some(slot => slot.type === 'Empty');
+
+if (hasEmptySlot) {
+    alert('Wizyta wykracza poza dostępność lekarza.');
+    return;
+}
+
+
+    // Sprawdź, czy wszystkie sloty w wybranym przedziale są wolne i dostępne
+    const slotsInRange = this.slotsPerDay[dayKey]?.slice(slotIndex, slotIndex + slotsToReserve);
+    const isAvailable = slotsInRange?.every(slot => slot && !slot.reserved && slot.available);
+
     if (!isAvailable) {
-      alert('Wybrana długość wizyty koliduje z innymi rezerwacjami.');
-      return;
+        const overlappingSlot = slotsInRange?.find(slot => slot.reserved || !slot.available);
+        alert(
+            `Wybrana długość wizyty koliduje z innymi rezerwacjami lub niedostępnymi slotami.\n` +
+            `Problem występuje w slocie: ${overlappingSlot?.time}`
+        );
+        return;
     }
-  
-    // Oznacz sloty jako zajęte
+
+    // Ostateczne sprawdzenie: czy ostatni slot wizyty jest w ramach dostępności lekarza
+    const finalSlotEndTime = this.calculateEndTime(startTime, (slotsToReserve - 1) * 30);
+    const isFinalSlotWithinAvailability = availabilityForDay.timeRanges.some((range: { start: string; end: string }) => {
+        return finalSlotEndTime <= range.end;
+    });
+
+    if (!isFinalSlotWithinAvailability) {
+        alert('Wizyta wykracza poza ostatni dostępny slot dnia.');
+        return;
+    }
+
+    // Zarezerwuj sloty
     for (let i = 0; i < slotsToReserve; i++) {
-      const targetSlot = this.slotsPerDay[dayKey][slotIndex + i];
-      if (targetSlot) {
-        targetSlot.reserved = true;
-        targetSlot.type = data.type;
-        targetSlot.details = `Zarezerwowane: ${data.type}`;
-      }
+        const targetSlot = this.slotsPerDay[dayKey][slotIndex + i];
+        if (targetSlot) {
+            targetSlot.reserved = true;
+            targetSlot.type = data.type;
+            targetSlot.details = `Zarezerwowane: ${data.type}`;
+        }
     }
-  
+
     // Zapisz wizytę
     const newAppointment = {
-      date: dayKey,
-      time: this.selectedSlot.time,
-      type: data.type,
-      status: 'zarezerwowane',
-      duration: data.duration,
-      patientName: data.patientName,
-      patientGender: data.patientGender,
-      patientAge: data.patientAge,
-      notes: data.notes,
+        date: dayKey,
+        time: this.selectedSlot.time,
+        type: data.type,
+        status: 'zarezerwowane',
+        duration: data.duration,
+        patientName: data.patientName,
+        patientGender: data.patientGender,
+        patientAge: data.patientAge,
+        notes: data.notes,
     };
-  
+
     this.dataService.addAppointment(newAppointment).subscribe({
-      next: () => {
-        console.log('Wizyta została zapisana:', newAppointment);
-        this.closeConsultationForm(); // Zamknięcie formularza
-        this.loadData(); // Odświeżenie kalendarza
-      },
-      error: (err) => {
-        console.error('Błąd zapisu wizyty:', err);
-        alert('Nie udało się zapisać wizyty. Spróbuj ponownie.');
-      },
+        next: () => {
+            alert('Wizyta została pomyślnie zapisana.');
+            this.loadData(); // Odśwież dane
+            this.closeConsultationForm(); // Zamknij formularz
+        },
+        error: (err) => {
+            console.error('Błąd zapisu wizyty:', err);
+            alert('Nie udało się zapisać wizyty. Spróbuj ponownie.');
+        },
     });
+}
+
+  
+  // Pomocnicza funkcja do obliczenia czasu zakończenia wizyty
+  calculateEndTime(startTime: string, duration: number): string {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const totalMinutes = startHour * 60 + startMinute + duration;
+  
+    const endHour = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+    const endMinute = (totalMinutes % 60).toString().padStart(2, '0');
+  
+    return `${endHour}:${endMinute}`;
   }
+  
   
   openCancelDialog(day: Date, slot: TimeSlot): void {
-    const appointment = this.appointments.find(
-      (appt: any) => appt.date === slot.date && appt.time === slot.time
-    );
-  
-    if (appointment) {
-      this.selectedSlot = {
-        date: new Date(day),
-        time: slot.time,
-        reserved: slot.reserved,
-        appointmentId: appointment.id,
-        patientName: appointment.patientName, // Przypisanie pacjenta
-        type: appointment.type, // Przypisanie typu wizyty
-      };
-      this.showCancelDialog = true;
+    if (slot.past) {
+        alert('Nie można anulować wizyty w przeszłości.');
+        return;
     }
-  }
-  
+
+    const appointment = this.appointments.find(
+        (appt: Appointment) =>
+            appt.date === day.toISOString().split('T')[0] && appt.time === slot.time
+    );
+
+    if (appointment) {
+        this.selectedSlot = {
+            date: new Date(day),
+            time: slot.time,
+            reserved: slot.reserved,
+            appointmentId: appointment.id,
+            patientName: appointment.patientName, // Przypisanie pacjenta
+            type: appointment.type, // Przypisanie typu wizyty
+        };
+        this.showCancelDialog = true;
+    } else {
+        alert('Nie można znaleźć powiązanej wizyty.');
+    }
+}
+
   
   closeCancelDialog(): void {
     this.showCancelDialog = false;
@@ -208,11 +277,12 @@ export class CalendarComponent implements OnInit {
     this.loadData(); // Wczytanie danych dostępności i rezerwacji
 
     // Inicjalizacja dynamicznego znacznika czasu
-    this.updateCurrentTimeMarker();
+    this.updateCurrentTimeMarker(); // Aktualizacja znacznika czasu od razu po załadowaniu
     setInterval(() => {
-      this.updateCurrentTimeMarker();
+        this.updateCurrentTimeMarker();
     }, 60000); // Odświeżanie co minutę
-  }
+}
+
   
   updateCurrentTimeMarker(): void {
     const now = new Date();
@@ -256,6 +326,7 @@ export class CalendarComponent implements OnInit {
                 this.absences = absences;
                 this.checkConflictsWithAbsences(); // Sprawdź konflikty
                 this.generateSlots(); // Ponownie wygeneruj sloty
+                this.updateCurrentTimeMarker(); // Aktualizacja znacznika czasu po załadowaniu slotów
               },
               error: (error) => console.error('Błąd ładowania absencji:', error),
             });
@@ -306,85 +377,166 @@ export class CalendarComponent implements OnInit {
   
   generateSlots() {
     console.log('Generowanie slotów dla tygodnia:', this.currentWeek);
-  
+
     this.currentWeek.forEach((date) => {
-      const dayKey = this.getDayKey(date);
-      const dayName = this.getDayName(date);
-  
-      console.log(`Przetwarzanie dnia: ${dayKey} (${dayName})`);
-  
-      const isAbsenceDay = this.absences.some((absence) => {
-        const absenceStart = new Date(absence.startDate);
-        const absenceEnd = new Date(absence.endDate);
-        absenceEnd.setHours(23, 59, 59, 999);
-        return absenceStart <= date && absenceEnd >= date;
-      });
-  
-      if (isAbsenceDay) {
-        this.slotsPerDay[dayKey] = [];
-        return;
-      }
-  
-      const availabilityForDay = this.availability?.filter((avail: any) => {
-        const isWithinDateRange =
-          new Date(avail.startDate) <= date &&
-          new Date(avail.endDate).setHours(23, 59, 59, 999) >= date.getTime();
-        const isDayIncluded = avail.days.includes(dayName);
-        return isWithinDateRange && isDayIncluded;
-      });
-  
-      if (!availabilityForDay || availabilityForDay.length === 0) {
-        this.slotsPerDay[dayKey] = [];
-        return;
-      }
-  
-      this.slotsPerDay[dayKey] = [];
-      let lastEnd = '8:00';
-  
-      availabilityForDay.forEach((avail: any) => {
-        avail.timeRanges.forEach((range: { start: string; end: string }) => {
-          // Puste sloty przed zakresem dostępności
-          const beforeRange = this.getSlotsBetween(lastEnd, range.start);
-          beforeRange.forEach((time) => {
-            this.slotsPerDay[dayKey].push(this.createEmptySlot(dayKey, time));
-          });
-  
-          // Sloty w ramach dostępności
-          const availableSlots = this.getSlotsBetween(range.start, range.end);
-          availableSlots.forEach((time) => {
-            const reservedAppointment = this.appointments?.find(
-              (app: any) => app.date === dayKey && app.time === time
-            );
-  
-            const isReserved = !!reservedAppointment;
-  
-            this.slotsPerDay[dayKey].push({
-              date: dayKey,
-              time,
-              reserved: isReserved,
-              type: reservedAppointment ? reservedAppointment.type : null,
-              details: reservedAppointment
-                ? `Rodzaj: ${reservedAppointment.type} (${reservedAppointment.status})
-Termin: ${reservedAppointment.date} ${reservedAppointment.time} (${reservedAppointment.duration} minut)
-Pacjent: ${reservedAppointment.patientName}, wiek: ${reservedAppointment.patientAge} (${reservedAppointment.patientGender})`
-                : undefined,
-              past: date.getTime() < new Date().getTime(),
-              available: !isReserved,
-            });
-          });
-  
-          lastEnd = range.end;
+        const dayKey = this.getDayKey(date);
+        const dayName = this.getDayName(date);
+
+        console.log(`Przetwarzanie dnia: ${dayKey} (${dayName})`);
+
+        // Sprawdź, czy dzień to dzień absencji
+        const isAbsenceDay = this.absences.some((absence) => {
+            const absenceStart = new Date(absence.startDate);
+            const absenceEnd = new Date(absence.endDate);
+            absenceEnd.setHours(23, 59, 59, 999);
+            return absenceStart <= date && absenceEnd >= date;
         });
-      });
-  
-      // Puste sloty po ostatnim zakresem dostępności
-      const afterRange = this.getSlotsBetween(lastEnd, '20:30');
-      afterRange.forEach((time) => {
-        this.slotsPerDay[dayKey].push(this.createEmptySlot(dayKey, time));
-      });
+
+        if (isAbsenceDay) {
+            this.slotsPerDay[dayKey] = [];
+            return;
+        }
+
+        // Pobierz dostępność lekarza w danym dniu
+        const availabilityForDay = this.availability?.filter((avail: any) => {
+            const isWithinDateRange =
+                new Date(avail.startDate) <= date &&
+                new Date(avail.endDate).setHours(23, 59, 59, 999) >= date.getTime();
+            const isDayIncluded = avail.days.includes(dayName);
+            return isWithinDateRange && isDayIncluded;
+        });
+
+        if (!availabilityForDay || availabilityForDay.length === 0) {
+            this.slotsPerDay[dayKey] = this.getSlotsBetween('08:00', '20:30').map((time) =>
+                this.createEmptySlot(dayKey, time)
+            );
+            return;
+        }
+
+        this.slotsPerDay[dayKey] = [];
+
+        // Generowanie slotów: puste + dostępne
+        let lastEnd = '08:00';
+        availabilityForDay.forEach((avail: any) => {
+            avail.timeRanges.forEach((range: { start: string; end: string }) => {
+                // Sloty typu `Empty` przed dostępnością
+                if (lastEnd < range.start) {
+                    const emptySlots = this.getSlotsBetween(lastEnd, range.start);
+                    emptySlots.forEach((time) => {
+                        this.slotsPerDay[dayKey].push(this.createEmptySlot(dayKey, time));
+                    });
+                }
+
+                // Sloty typu `Dostępny` w dostępności
+                const availableSlots = this.getSlotsBetween(range.start, range.end);
+                availableSlots.forEach((time) => {
+                    const slotDate = new Date(date);
+                    const [hour, minute] = time.split(':').map(Number);
+                    slotDate.setHours(hour, minute, 0, 0);
+                    this.slotsPerDay[dayKey].push({
+                        date: dayKey,
+                        time,
+                        reserved: false,
+                        type: 'Dostępny',
+                        details: undefined,
+                        past: slotDate <= new Date(), // Dokładniejsze sprawdzanie, czy slot jest w przeszłości
+                        available: true,
+                    });
+                });
+
+                lastEnd = range.end; // Aktualizacja końca dostępności
+            });
+        });
+
+        // Sloty typu `Empty` po dostępności
+        const emptySlotsAfterLastRange = this.getSlotsBetween(lastEnd, '20:30');
+        emptySlotsAfterLastRange.forEach((time) => {
+            this.slotsPerDay[dayKey].push(this.createEmptySlot(dayKey, time));
+        });
+
+        // Oznaczanie slotów jako zarezerwowane
+        this.appointments?.forEach((appointment: Appointment) => {
+            if (appointment.date === dayKey) {
+                const slotsToReserve = Math.ceil(appointment.duration / 30);
+                const startMinutes = this.convertTimeToMinutes(appointment.time);
+
+                for (let i = 0; i < slotsToReserve; i++) {
+                    const slotTime = this.getTimeAfter(appointment.time, i * 30);
+                    const slot = this.slotsPerDay[dayKey].find((s) => s.time === slotTime);
+
+                    if (slot) {
+                        slot.reserved = true;
+                        slot.type = appointment.type;
+                        slot.details = `
+Rodzaj: ${appointment.type} (${appointment.status})
+Termin: ${appointment.date} ${appointment.time} (${appointment.duration} minut)
+Pacjent: ${appointment.patientName}, wiek: ${appointment.patientAge} (${appointment.patientGender})
+                        `;
+                        slot.available = false; // Slot nie jest dostępny
+                    }
+                }
+            }
+        });
     });
+}
+
+
+  isTimeWithinAppointment(appointment: Appointment, slotTime: string): boolean {
+    const appointmentStart = this.convertTimeToMinutes(appointment.time);
+    const appointmentEnd = appointmentStart + appointment.duration;
+    const slotStart = this.convertTimeToMinutes(slotTime);
+  
+    return slotStart >= appointmentStart && slotStart < appointmentEnd;
   }
   
+  isSlotAlreadyAdded(dayKey: string, time: string): boolean {
+    return this.slotsPerDay[dayKey]?.some(slot => slot.time === time);
+  }
+  
+  
+  isSlotCoveredByLongVisit(appointment: Appointment, slotTime: string): boolean {
+    const appointmentStart = this.convertTimeToMinutes(appointment.time);
+    const appointmentEnd = appointmentStart + appointment.duration;
+    const slotStart = this.convertTimeToMinutes(slotTime);
+  
+    return slotStart >= appointmentStart && slotStart < appointmentEnd;
+  }
+  
+  addLongVisitSlots(appointment: Appointment, dayKey: string, date: Date): void {
+    const slotsToReserve = Math.ceil(appointment.duration / 30);
+    const startMinutes = this.convertTimeToMinutes(appointment.time);
+  
+    for (let i = 0; i < slotsToReserve; i++) {
+      const slotTime = this.getTimeAfter(appointment.time, i * 30);
+      if (!this.isSlotAlreadyAdded(dayKey, slotTime)) {
+        this.slotsPerDay[dayKey].push({
+          date: dayKey,
+          time: slotTime,
+          reserved: true,
+          type: appointment.type,
+          details: `
+  Rodzaj: ${appointment.type} (${appointment.status})
+  Termin: ${appointment.date} ${appointment.time} (${appointment.duration} minut)
+  Pacjent: ${appointment.patientName}, wiek: ${appointment.patientAge} (${appointment.patientGender})
+          `,
+          past: date.getTime() < new Date().getTime(),
+          available: false,
+        });
+      }
+    }
+  }
+  
+  
+  getTimeAfter(startTime: string, minutesToAdd: number): string {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + minutesToAdd;
+  
+    const endHour = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+    const endMinute = (totalMinutes % 60).toString().padStart(2, '0');
+  
+    return `${endHour}:${endMinute}`;
+  }
+
   createEmptySlot(dayKey: string, time: string): TimeSlot {
     return {
       date: dayKey,
@@ -474,7 +626,7 @@ Pacjent: ${reservedAppointment.patientName}, wiek: ${reservedAppointment.patient
     return type && type in this.visitTypes ? this.visitTypes[type as VisitType] : 'white';
   }
   
-  getSlotType(slot: TimeSlot): VisitType | "Termin niedostępny" | "Empty" {
+  getSlotType(slot: TimeSlot): VisitType | 'Dostępny' | "Termin niedostępny" | "Empty" {
     return slot.type;
   }
 

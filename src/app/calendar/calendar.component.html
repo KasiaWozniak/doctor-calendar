@@ -45,13 +45,19 @@
           [class.empty]="slot.type === 'Empty'"
           [class.past]="slot.past"
           [class.absence-day]="isAbsenceDay(day)"
-          (click)="slot.type !== 'Empty' && !slot.past && !slot.reserved ? openConsultationForm(day, slot) : null"
+          (click)="
+            !slot.past && slot.reserved
+            ? openCancelDialog(day, slot)
+            : !slot.past && slot.type !== 'Empty'
+            ? openConsultationForm(day, slot)
+            : null
+          "          
           (mouseover)="slot.type !== 'Empty' ? showDetails(slot) : null"
           (mouseout)="hideDetails()"
         >
         <span *ngIf="slot.type === 'Empty'"></span>
         <span *ngIf="slot.type === 'Termin niedostępny'">Termin niedostępny</span>
-        <span *ngIf="!slot.reserved && slot.type !== 'Empty'">Zarezerwuj wizytę</span>
+        <span *ngIf="slot.type === 'Dostępny'">Zarezerwuj wizytę</span>
         <span *ngIf="slot.details === 'Konsultacja odwołana'">Konsultacja odwołana</span>
         <span *ngIf="slot.reserved">Termin zarezerwowany</span>        
       </div>
