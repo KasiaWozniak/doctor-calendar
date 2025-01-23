@@ -84,4 +84,14 @@ export class DataService {
   updateAvailability(id: string, availability: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/availability/${id}`, availability);
   }
+
+  registerUser(user: { name: string; email: string; password: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/users/register`, user);
+  }
+  
+  loginUser(credentials: { email: string; password: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/users/login`, credentials);
+  }
+  
+
 }
