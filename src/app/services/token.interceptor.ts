@@ -1,11 +1,6 @@
 import { Injectable } from '@angular/core';
-import {
-  HttpEvent,
-  HttpHandler,
-  HttpInterceptor,
-  HttpRequest,
-} from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 
@@ -35,7 +30,7 @@ export class TokenInterceptor implements HttpInterceptor {
             })
           );
         }
-        return throwError(error);
+        throw error;
       })
     );
   }

@@ -20,17 +20,20 @@ export class AuthService {
   }
 
   login(email: string, password: string): void {
-    const data = { email, password }; // Zakładamy zapytanie do backendu
+    const data = { email, password };
     this.http.post<{ token: string; refreshToken: string; name: string }>('http://localhost:5000/users/login', data)
       .subscribe((response) => {
-        localStorage.setItem('accessToken', response.token);
-        localStorage.setItem('refreshToken', response.refreshToken);
-        localStorage.setItem('loggedInUser', response.name); // Przechowujemy imię użytkownika w localStorage
+        localStorage.setItem('loggedInUser', response.name); // Zapis nazwy użytkownika
+        const mode = localStorage.getItem('persistenceMode') || 'LOCAL';
+        if (mode === 'LOCAL') {
+          localStorage.setItem('accessToken', response.token);
+          localStorage.setItem('refreshToken', response.refreshToken);
+        } else if (mode === 'SESSION') {
+          sessionStorage.setItem('accessToken', response.token);
+          sessionStorage.setItem('refreshToken', response.refreshToken);
+        }
         this.authStatusSubject.next(true);
-        this.currentUser = response.name; // Ustawiamy imię w AuthService
-      }, (error) => {
-        console.error('Błąd logowania:', error);
-        alert('Nieprawidłowy email lub hasło');
+        this.currentUser = response.name;
       });
   }
   
@@ -42,19 +45,22 @@ export class AuthService {
   }
 
   getLoggedInUser(): string {
-    return this.currentUser;
+    return localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser') || '';
   }
+  
 
   initializeAuth(): void {
-    const token = localStorage.getItem('accessToken');
+    const mode = localStorage.getItem('persistenceMode') || 'LOCAL';
+    const token = mode === 'LOCAL' ? localStorage.getItem('accessToken') : sessionStorage.getItem('accessToken');
+  
     if (token) {
       this.http.post<{ valid: boolean; name: string }>('http://localhost:5000/users/verify-token', { token })
         .subscribe({
           next: (response) => {
             if (response.valid) {
               this.authStatusSubject.next(true);
-              this.currentUser = response.name; // Poprawna aktualizacja imienia
-              localStorage.setItem('loggedInUser', response.name); // Zapisujemy imię w localStorage
+              localStorage.setItem('loggedInUser', response.name); // Zapis nazwy użytkownika
+              this.currentUser = response.name;
             } else {
               this.logout();
             }
@@ -63,6 +69,8 @@ export class AuthService {
         });
     }
   }
+  
+  
   
   
   refreshAccessToken(): Observable<string> {
@@ -81,15 +89,25 @@ export class AuthService {
   setPersistence(mode: 'LOCAL' | 'SESSION' | 'NONE'): void {
     switch (mode) {
       case 'LOCAL':
-        localStorage.setItem('persistence', 'LOCAL');
+        localStorage.setItem('accessToken', localStorage.getItem('accessToken') || '');
+        localStorage.setItem('refreshToken', localStorage.getItem('refreshToken') || '');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
         break;
+  
       case 'SESSION':
-        sessionStorage.setItem('persistence', 'SESSION');
+        sessionStorage.setItem('accessToken', localStorage.getItem('accessToken') || '');
+        sessionStorage.setItem('refreshToken', localStorage.getItem('refreshToken') || '');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         break;
+  
       case 'NONE':
         localStorage.clear();
         sessionStorage.clear();
         break;
     }
+    localStorage.setItem('persistenceMode', mode);
   }
+  
 }
