@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataService } from '../services/data.service';
 import { ConsultationFormComponent } from '../consultation-form/consultation-form.component';
+import { forkJoin } from 'rxjs';
 
 
 type VisitType = 'Pierwsza wizyta' | 'Wizyta kontrolna' | 'Choroba przewlekła' | 'Recepta';
@@ -110,6 +111,18 @@ export class CalendarComponent implements OnInit {
         return;
     }
 
+      // Sprawdź, czy wszystkie wymagane pola są wypełnione
+  if (
+    !data.type ||
+    !data.duration ||
+    !data.patientName ||
+    !data.patientGender ||
+    !data.patientAge
+  ) {
+    alert('Proszę wypełnić wszystkie wymagane pola.');
+    return;
+  }
+
     const slotsToReserve = Math.ceil(data.duration / 30); // Liczba slotów do zajęcia
     const dayKey = this.selectedSlot.date.toISOString().split('T')[0];
     const slotIndex = this.slotsPerDay[dayKey]?.findIndex(slot => slot.time === this.selectedSlot!.time);
@@ -195,8 +208,11 @@ if (hasEmptySlot) {
         patientName: data.patientName,
         patientGender: data.patientGender,
         patientAge: data.patientAge,
-        notes: data.notes,
+        notes: data.notes || '',
     };
+
+    console.log('Dane wysyłane do backendu:', newAppointment); // Dodaj ten log
+
 
     this.dataService.addAppointment(newAppointment).subscribe({
         next: () => {
@@ -240,7 +256,7 @@ if (hasEmptySlot) {
             date: new Date(day),
             time: slot.time,
             reserved: slot.reserved,
-            appointmentId: appointment.id,
+            appointmentId: appointment.id || appointment._id,
             patientName: appointment.patientName, // Przypisanie pacjenta
             type: appointment.type, // Przypisanie typu wizyty
         };
@@ -256,21 +272,26 @@ if (hasEmptySlot) {
     this.selectedSlot = null; // Resetuj wybrany slot
   }
   
-  confirmCancelAppointment(): void {
-    if (this.selectedSlot?.appointmentId) {
-      this.dataService.deleteAppointment(this.selectedSlot.appointmentId).subscribe({
-        next: () => {
-          alert('Wizyta została anulowana.');
-          this.showCancelDialog = false;
-          this.loadData(); // Odśwież dane kalendarza
-        },
-        error: (err) => {
-          console.error('Błąd podczas anulowania wizyty:', err);
-          alert('Nie udało się anulować wizyty.');
-        },
-      });
-    }
+// calendar.component.ts
+confirmCancelAppointment(): void {
+  if (this.selectedSlot?.appointmentId) {
+    console.log('Anulowanie wizyty o ID:', this.selectedSlot.appointmentId);
+    this.dataService.deleteAppointment(this.selectedSlot.appointmentId).subscribe({
+      next: () => {
+        console.log('Wizyta została pomyślnie anulowana.');
+        alert('Wizyta została anulowana.');
+        this.showCancelDialog = false;
+        this.loadData(); // Odśwież dane kalendarza
+      },
+      error: (err) => {
+        console.error('Błąd podczas anulowania wizyty:', err);
+        alert('Nie udało się anulować wizyty.');
+      },
+    });
+  } else {
+    console.error('Brak ID wizyty do anulowania.');
   }
+}
   
   ngOnInit(): void {
     this.initializeWeek(); // Zainicjalizowanie bieżącego tygodnia
@@ -315,28 +336,22 @@ if (hasEmptySlot) {
   }
 
   loadData(): void {
-    this.dataService.getAvailability().subscribe({
-      next: (availability) => {
-        this.availability = availability;
-        this.dataService.getAppointments().subscribe({
-          next: (appointments) => {
-            this.appointments = appointments;
-            this.dataService.getAbsences().subscribe({
-              next: (absences) => {
-                this.absences = absences;
-                this.checkConflictsWithAbsences(); // Sprawdź konflikty
-                this.generateSlots(); // Ponownie wygeneruj sloty
-                this.updateCurrentTimeMarker(); // Aktualizacja znacznika czasu po załadowaniu slotów
-              },
-              error: (error) => console.error('Błąd ładowania absencji:', error),
-            });
-          },
-          error: (error) => console.error('Błąd ładowania wizyt:', error),
-        });
-      },
-      error: (error) => console.error('Błąd ładowania dostępności:', error),
+    forkJoin({
+        availability: this.dataService.getAvailability(),
+        appointments: this.dataService.getAppointments(),
+        absences: this.dataService.getAbsences(),
+    }).subscribe({
+        next: (data) => {
+            this.availability = data.availability;
+            this.appointments = data.appointments;
+            this.absences = data.absences;
+            this.generateSlots();
+        },
+        error: (error) => {
+            console.error('Error loading data:', error);
+        },
     });
-  }
+}
   
   
   saveAppointments(appointment: Appointment): void {
@@ -439,7 +454,7 @@ if (hasEmptySlot) {
                         reserved: false,
                         type: 'Dostępny',
                         details: undefined,
-                        past: slotDate <= new Date(), // Dokładniejsze sprawdzanie, czy slot jest w przeszłości
+                        past: slotDate < new Date(), // Dokładniejsze sprawdzanie, czy slot jest w przeszłości
                         available: true,
                     });
                 });

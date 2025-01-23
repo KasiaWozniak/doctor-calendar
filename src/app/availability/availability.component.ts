@@ -134,6 +134,9 @@ export class AvailabilityComponent {
       timeRanges: [...this.cyclicAvailability.timeRanges],
     };
   
+    console.log('Wysyłane dane:', availability); // Dodaj to logowanie
+
+    
     // Sprawdź kolizje z absencjami
     this.dataService.getAbsences().subscribe({
       next: (absences) => {

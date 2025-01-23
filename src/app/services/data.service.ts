@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { catchError, Observable, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DataService {
-  private apiUrl = 'http://localhost:3000'; // Podstawowy URL
+  private apiUrl = 'http://localhost:5000'; // Podstawowy URL
 
   constructor(private http: HttpClient) {}
 
@@ -19,11 +19,18 @@ export class DataService {
   }
   
   addAppointment(appointment: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/appointments`, appointment);
-  }  
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.post(`${this.apiUrl}/appointments`, appointment, { headers });
+  }
 
   addAvailability(availability: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/availability`, availability);
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.post(`${this.apiUrl}/availability`, availability, { headers }).pipe(
+      catchError((err) => {
+        console.error('Błąd w addAvailability:', err);
+        throw err;
+      })
+    );
   }
 
   getAvailability(): Observable<any> {
@@ -47,7 +54,15 @@ export class DataService {
   }
   
   updateAppointment(appointment: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/appointments/${appointment.id}`, appointment);
+    const appointmentId = appointment.id || appointment._id; // Użyj `id` lub `_id`
+    console.log('Sending update request for appointment with ID:', appointmentId); // Logowanie ID
+  
+    if (!appointmentId) {
+      console.error('Błąd: ID wizyty jest undefined:', appointment);
+      return throwError(() => new Error('ID wizyty jest wymagane')); // Zwróć błąd, jeśli ID jest undefined
+    }
+  
+    return this.http.put(`${this.apiUrl}/appointments/${appointmentId}`, appointment);
   }
   
   deleteAbsence(date: string): Observable<any> {
@@ -62,5 +77,11 @@ export class DataService {
     return this.http.delete(`${this.apiUrl}/appointments/${appointmentId}`);
   }
   
+  deleteAvailability(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/availability/${id}`);
+  }
 
+  updateAvailability(id: string, availability: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/availability/${id}`, availability);
+  }
 }

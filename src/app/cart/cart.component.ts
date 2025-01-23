@@ -104,10 +104,18 @@ export class CartComponent implements OnInit {
       return { ...appt, status: 'opłacone' };
     });
 
+    console.log('Updated Appointments:', updatedAppointments); // Dodaj to logowanie
+
+
     // Zaktualizuj status wizyt w serwerze
     updatedAppointments.forEach((appt) => {
+      console.log('Updating appointment with ID:', appt.id || appt._id); // Dodaj to logowanie
+      if (!appt.id && !appt._id) {
+        console.error('Błąd: ID wizyty jest undefined:', appt);
+        return;
+      }
       this.dataService.updateAppointment(appt).subscribe({
-        next: () => console.log(`Wizyta ${appt.id} została oznaczona jako opłacona.`),
+        next: () => console.log(`Wizyta ${appt.id||appt._id} została oznaczona jako opłacona.`),
         error: (err) => console.error('Błąd aktualizacji wizyty:', err),
       });
     });
