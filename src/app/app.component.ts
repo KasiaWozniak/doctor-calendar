@@ -11,12 +11,14 @@ import { FormsModule } from '@angular/forms';
   imports: [RouterModule, CommonModule, FormsModule],
   template: `
     <div class="app-container">
-  <!-- Menu wyboru trybu persystencji -->
-  <select (change)="onPersistenceChange($event)">
+  <div *ngIf="isAdmin">
+  <label for="persistence">Tryb persystencji:</label>
+  <select id="persistence" (change)="setPersistence($event)">
     <option value="LOCAL">Local</option>
     <option value="SESSION">Session</option>
     <option value="NONE">None</option>
   </select>
+</div>
 
   <!-- Przyciski nawigacyjne -->
   <div class="navigation-buttons">
@@ -25,7 +27,7 @@ import { FormsModule } from '@angular/forms';
     <button *ngIf="isAuthenticated" (click)="logout()">Wylogowanie</button>
     <button *ngIf="isAuthenticated" (click)="navigateTo('absence')">Definiowanie absencji</button>
     <button *ngIf="isAuthenticated" (click)="navigateTo('availability')">Definiowanie dostępności</button>
-    <button (click)="navigateTo('calendar')">Kalendarz</button>
+    <button *ngIf="isAuthenticated" (click)="navigateTo('calendar')">Kalendarz</button>
     <span *ngIf="isAuthenticated">Zalogowany jako: {{ loggedInUser }}</span>
   </div>
 
@@ -44,16 +46,20 @@ import { FormsModule } from '@angular/forms';
 export class AppComponent {
   isAuthenticated = false;
   loggedInUser: string | null = null; // Przechowuje nazwę użytkownika
+  isAdmin: boolean = false; // Dodane sprawdzanie, czy użytkownik to admin
   constructor(private router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.authService.initializeAuth();
     this.authService.authStatus.subscribe((status) => {
       this.isAuthenticated = status;
-      this.loggedInUser = localStorage.getItem('loggedInUser'); // Pobieranie z localStorage
+      this.loggedInUser = localStorage.getItem('loggedInUser'); // Pobieranie nazwy użytkownika
+
+      // Pobranie roli użytkownika z localStorage
+      const role = localStorage.getItem('userRole');
+      this.isAdmin = role === 'admin';
     });
   }
-  
   
 
   navigateTo(route: string) {
@@ -68,16 +74,10 @@ export class AppComponent {
     this.authService.logout();
     this.router.navigate(['/login']);
   }
-
-  onPersistenceChange(event: Event): void {
-    const target = event.target as HTMLSelectElement; // Rzutowanie na HTMLSelectElement
-    const mode = target.value; // Pobranie wartości
-    this.setPersistence(mode as 'LOCAL' | 'SESSION' | 'NONE'); // Wywołanie metody
-  }
   
-  setPersistence(mode: 'LOCAL' | 'SESSION' | 'NONE'): void {
-    this.authService.setPersistence(mode);
+  setPersistence(event: Event): void {
+    const mode = (event.target as HTMLSelectElement).value as 'LOCAL' | 'SESSION' | 'NONE';
+    this.authService.setGlobalPersistence(mode);
   }
-  
   
 }

@@ -3,11 +3,21 @@
     <form (ngSubmit)="addAbsence()">
       <label>
         Data początkowa:
-        <input type="date" [(ngModel)]="newAbsence.startDate" name="startDate" required />
+        <input 
+          type="date" 
+          [(ngModel)]="newAbsence.startDate" 
+          name="startDate" 
+          required 
+          (change)="updateMinEndDate()" />
       </label>
       <label>
         Data końcowa:
-        <input type="date" [(ngModel)]="newAbsence.endDate" name="endDate" required />
+        <input 
+          type="date" 
+          [(ngModel)]="newAbsence.endDate" 
+          name="endDate" 
+          required 
+          [min]="newAbsence.startDate" />
       </label>
       <button type="submit">Dodaj</button>
     </form>

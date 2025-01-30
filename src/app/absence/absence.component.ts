@@ -46,6 +46,12 @@ addAbsence(): void {
   }
 }
 
+updateMinEndDate(): void {
+  if (this.newAbsence.endDate < this.newAbsence.startDate) {
+    this.newAbsence.endDate = '';
+  }
+}
+
 checkConflictsWithAbsences(): void {
   this.dataService.getAppointments().subscribe({
     next: (appointments) => {
