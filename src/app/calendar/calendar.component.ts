@@ -73,7 +73,6 @@ export class CalendarComponent implements OnInit {
   };
 
   constructor(private dataService: DataService) {
-    console.log('CalendarComponent został zainicjowany.');
   }
 
   openConsultationForm(day: Date, slot: TimeSlot): void {
@@ -211,7 +210,6 @@ if (hasEmptySlot) {
         notes: data.notes || '',
     };
 
-    console.log('Dane wysyłane do backendu:', newAppointment); // Dodaj ten log
 
 
     this.dataService.addAppointment(newAppointment).subscribe({
@@ -275,10 +273,8 @@ if (hasEmptySlot) {
 // calendar.component.ts
 confirmCancelAppointment(): void {
   if (this.selectedSlot?.appointmentId) {
-    console.log('Anulowanie wizyty o ID:', this.selectedSlot.appointmentId);
     this.dataService.deleteAppointment(this.selectedSlot.appointmentId).subscribe({
       next: () => {
-        console.log('Wizyta została pomyślnie anulowana.');
         alert('Wizyta została anulowana.');
         this.showCancelDialog = false;
         this.loadData(); // Odśwież dane kalendarza
@@ -332,7 +328,6 @@ confirmCancelAppointment(): void {
       this.currentTimeMarker = null; // Jeśli dzień nie jest widoczny
     }
   
-    console.log('Aktualny znacznik czasu:', this.currentTimeMarker);
   }
 
   loadData(): void {
@@ -356,7 +351,6 @@ confirmCancelAppointment(): void {
   
   saveAppointments(appointment: Appointment): void {
     this.dataService.addAppointment(appointment).subscribe({
-      next: () => console.log('Rezerwacja zapisana.'),
       error: (error) => console.error('Błąd zapisu rezerwacji:', error),
     });
   }
@@ -365,7 +359,6 @@ confirmCancelAppointment(): void {
     const today = new Date();
     const firstDay = new Date(today.setDate(today.getDate() - today.getDay() + 1)); // Poniedziałek
     this.currentWeek = Array.from({ length: 7 }, (_, i) => new Date(firstDay.getTime() + i * 24 * 60 * 60 * 1000));
-    console.log('Bieżący tydzień:', this.currentWeek); // Debugowanie
   }
 
   getDayName(date: Date): string {
@@ -391,13 +384,11 @@ confirmCancelAppointment(): void {
   }
   
   generateSlots() {
-    console.log('Generowanie slotów dla tygodnia:', this.currentWeek);
 
     this.currentWeek.forEach((date) => {
         const dayKey = this.getDayKey(date);
         const dayName = this.getDayName(date);
 
-        console.log(`Przetwarzanie dnia: ${dayKey} (${dayName})`);
 
         // Sprawdź, czy dzień to dzień absencji
         const isAbsenceDay = this.absences.some((absence) => {
@@ -684,7 +675,6 @@ Pacjent: ${appointment.patientName}, wiek: ${appointment.patientAge} (${appointm
   
           // Zaktualizuj w bazie danych
           this.dataService.updateAppointment(appointment).subscribe({
-            next: () => console.log(`Zmieniono status wizyty: ${appointment.id}`),
             error: (err) => console.error('Błąd podczas aktualizacji wizyty:', err),
           });
         }

@@ -55,7 +55,6 @@ export class DataService {
   
   updateAppointment(appointment: any): Observable<any> {
     const appointmentId = appointment.id || appointment._id; // Użyj `id` lub `_id`
-    console.log('Sending update request for appointment with ID:', appointmentId); // Logowanie ID
   
     if (!appointmentId) {
       console.error('Błąd: ID wizyty jest undefined:', appointment);

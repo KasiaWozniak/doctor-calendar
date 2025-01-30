@@ -49,7 +49,6 @@ export class CartComponent implements OnInit {
   removeAppointment(appointmentId: string): void {
     this.dataService.deleteAppointment(appointmentId).subscribe({
       next: () => {
-        console.log(`Wizyta ${appointmentId} została usunięta.`);
         this.loadAppointments(); // Odśwież listę wizyt
       },
       error: (err) => {

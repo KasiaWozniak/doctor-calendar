@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
   imports: [RouterModule, CommonModule, FormsModule],
   template: `
     <div class="app-container">
-  <div *ngIf="isAdmin">
+  <div *ngIf="isAdmin"> 
   <label for="persistence">Tryb persystencji:</label>
   <select id="persistence" (change)="setPersistence($event)">
     <option value="LOCAL">Local</option>
@@ -53,11 +53,10 @@ export class AppComponent {
     this.authService.initializeAuth();
     this.authService.authStatus.subscribe((status) => {
       this.isAuthenticated = status;
-      this.loggedInUser = localStorage.getItem('loggedInUser'); // Pobieranie nazwy użytkownika
-
-      // Pobranie roli użytkownika z localStorage
-      const role = localStorage.getItem('userRole');
-      this.isAdmin = role === 'admin';
+      this.loggedInUser = localStorage.getItem('loggedInUser');
+  
+      // Pobieranie roli użytkownika poprawnie
+      this.isAdmin = localStorage.getItem('userRole') === 'admin' && status;
     });
   }
   

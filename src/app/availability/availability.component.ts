@@ -134,7 +134,6 @@ export class AvailabilityComponent {
       timeRanges: [...this.cyclicAvailability.timeRanges],
     };
   
-    console.log('Wysyłane dane:', availability); // Dodaj to logowanie
 
     
     // Sprawdź kolizje z absencjami
@@ -160,7 +159,6 @@ export class AvailabilityComponent {
           overlappingDates.forEach((date) => {
             // Usuń absencję
             this.dataService.deleteAbsence(date).subscribe(() => {
-              console.log(`Usunięto absencję dla dnia ${date}`);
             });
   
             // Przywróć rezerwacje dla dnia
@@ -170,11 +168,7 @@ export class AvailabilityComponent {
                 .forEach((appointment: any) => {
                   if (appointment.status === 'odwołana') {
                     appointment.status = 'zarezerwowane';
-                    this.dataService.updateAppointment(appointment).subscribe(() => {
-                      console.log(
-                        `Przywrócono rezerwację dla dnia ${appointment.date} o godzinie ${appointment.time}`
-                      );
-                    });
+                    this.dataService.updateAppointment(appointment).subscribe(() => {});
                   }
                 });
             });
@@ -184,7 +178,6 @@ export class AvailabilityComponent {
         // Zapisz nową dostępność
         this.dataService.addAvailability(availability).subscribe({
           next: () => {
-            console.log('Cykliczna dostępność zapisana.');
             alert('Dostępność została zapisana.');
           },
           error: (err) => {
@@ -224,19 +217,16 @@ export class AvailabilityComponent {
           if (absenceStart.toISOString().split('T')[0] === absenceEnd.toISOString().split('T')[0]) {
             // Absencja tylko na ten dzień – usuń całą absencję
             this.dataService.deleteAbsence(targetAbsence.id).subscribe(() => {
-              console.log('Usunięto absencję pokrywającą się z jednorazową dostępnością.');
             });
           } else if (absenceStart.toISOString().split('T')[0] === singleDay) {
             // Jeśli to początek absencji, przesuń początek absencji
             targetAbsence.startDate = new Date(new Date(singleDay).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             this.dataService.updateAbsence(targetAbsence).subscribe(() => {
-              console.log('Zaktualizowano początek absencji.');
             });
           } else if (absenceEnd.toISOString().split('T')[0] === singleDay) {
             // Jeśli to koniec absencji, przesuń koniec absencji
             targetAbsence.endDate = new Date(new Date(singleDay).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             this.dataService.updateAbsence(targetAbsence).subscribe(() => {
-              console.log('Zaktualizowano koniec absencji.');
             });
           } else {
             // Jeśli dzień jest w środku absencji, podziel absencję na dwie części

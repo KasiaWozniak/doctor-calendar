@@ -22,9 +22,17 @@ export class AuthService {
   login(email: string, password: string): void {
     const data = { email, password };
     this.http.post<{ token: string; refreshToken?: string; name: string; role: string }>('http://localhost:5000/users/login', data)
-      .subscribe((response) => {
-        localStorage.setItem('loggedInUser', response.name); // Przechowujemy nazwę użytkownika
-        localStorage.setItem('userRole', response.role); // Zapisujemy rolę użytkownika
+    .subscribe((response) => {
+      if (response.token) {
+        console.log('✅ Zalogowano pomyślnie, zapisuję token w localStorage');
+        localStorage.setItem('accessToken', response.token); // Zapisywanie tokena
+        localStorage.setItem('loggedInUser', response.name); // Zapisz nazwę użytkownika
+        localStorage.setItem('userRole', response.role); // Zapisz rolę użytkownika
+      } else {
+        console.error('❌ Brak tokena w odpowiedzi z serwera');
+      }
+      console.log('Odpowiedź serwera:', response);
+
     // Pobranie globalnego trybu persystencji po zalogowaniu
     this.getGlobalPersistence();
 
@@ -35,27 +43,58 @@ export class AuthService {
       this.currentUser = response.name;
     }, 100); // Opóźnienie, aby pobrać tryb z serwera
   });
+  console.log(localStorage.getItem('accessToken'));
 }
 
 setGlobalPersistence(mode: 'LOCAL' | 'SESSION' | 'NONE'): void {
   const adminToken = localStorage.getItem('accessToken');
-  this.http.post('http://localhost:5000/users/set-persistence', { mode, adminToken })
-    .subscribe(() => {
-      localStorage.setItem('persistenceMode', mode);
-      alert(`Tryb persystencji zmieniony na: ${mode}`);
-    });
+  if (!adminToken) {
+    console.error('❌ Brak tokena administratora');
+    return;
+  }
+
+  this.http.post<{ message: string }>(
+    'http://localhost:5000/users/set-persistence',
+    { mode },
+    { headers: { Authorization: `Bearer ${adminToken}` } }
+  ).subscribe({
+    next: (response) => {
+      if (mode === 'NONE') {
+        localStorage.clear();
+        sessionStorage.clear();
+      } else {
+        localStorage.setItem('persistenceMode', mode);
+        sessionStorage.setItem('persistenceMode', mode);
+      }
+      alert(response.message);
+    },
+    error: (err) => {
+      console.error('❌ Błąd zmiany trybu persystencji:', err);
+    }
+  });
 }
 
-  
-getGlobalPersistence(): void {
-  this.http.get<{ mode: 'LOCAL' | 'SESSION' | 'NONE' }>('http://localhost:5000/users/get-persistence')
-    .subscribe((response) => {
+
+async getGlobalPersistence(): Promise<void> {
+  try {
+    const response = await this.http.get<{ mode: 'LOCAL' | 'SESSION' | 'NONE' }>(
+      'http://localhost:5000/users/get-persistence'
+    ).toPromise();
+
+    if (response?.mode) {
       localStorage.setItem('persistenceMode', response.mode);
       sessionStorage.setItem('persistenceMode', response.mode);
-    });
+    } else {
+      console.warn('⚠️ Nie udało się pobrać trybu persystencji, ustawiam domyślny: LOCAL.');
+      localStorage.setItem('persistenceMode', 'LOCAL');
+    }
+  } catch (error) {
+    console.error('❌ Błąd podczas pobierania trybu persystencji:', error);
+    localStorage.setItem('persistenceMode', 'LOCAL');
+  }
 }
 
-  
+
   logout(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -66,30 +105,54 @@ getGlobalPersistence(): void {
   getLoggedInUser(): string {
     return localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser') || '';
   }
-  
 
-  initializeAuth(): void {
-    this.getGlobalPersistence(); // Pobranie trybu z serwera
+  async initializeAuth(): Promise<void> {
+    try {
+      console.log('🔵 Rozpoczynanie inicjalizacji autoryzacji...');
+      await this.getGlobalPersistence();
   
-    const mode = localStorage.getItem('persistenceMode') || 'LOCAL';
-    const token = mode === 'LOCAL' ? localStorage.getItem('accessToken') : sessionStorage.getItem('accessToken');
+      const mode = (localStorage.getItem('persistenceMode') as 'LOCAL' | 'SESSION' | 'NONE') || 'LOCAL';
+      console.log('🔵 Tryb persystencji:', mode);
   
-    if (token) {
-      this.http.post<{ valid: boolean; name: string }>('http://localhost:5000/users/verify-token', { token })
-        .subscribe({
-          next: (response) => {
-            if (response.valid) {
-              this.authStatusSubject.next(true);
-              this.currentUser = response.name;
-            } else {
+      if (mode === 'NONE') {
+        console.warn('⚠️ Tryb persystencji to NONE. Wylogowywanie...');
+        this.logout();
+        return;
+      }
+  
+      const token = mode === 'LOCAL' ? localStorage.getItem('accessToken') : sessionStorage.getItem('accessToken');
+      console.log('🔵 Token do weryfikacji:', token);
+  
+      if (token) {
+        this.http.post<{ valid: boolean; name: string; role: string }>('http://localhost:5000/users/verify-token', { token })
+          .subscribe({
+            next: (response) => {
+              console.log('✅ Weryfikacja tokena zakończona sukcesem:', response);
+              if (response.valid) {
+                this.authStatusSubject.next(true);
+                this.currentUser = response.name;
+                localStorage.setItem('userRole', response.role);
+              } else {
+                console.warn('⚠️ Token nie jest już ważny, wylogowywanie...');
+                this.logout();
+              }
+            },
+            error: (err) => {
+              console.error('❌ Błąd podczas weryfikacji tokena:', err);
               this.logout();
-            }
-          },
-          error: () => this.logout(),
-        });
+            },
+          });
+      } else {
+        console.warn('⚠️ Brak tokena w przechowywaniu, wylogowywanie...');
+        this.logout();
+      }
+    } catch (error) {
+      console.error('❌ Błąd podczas inicjalizacji autoryzacji:', error);
+      this.logout();
     }
   }
   
+
   refreshAccessToken(): Observable<string> {
     const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
     const mode = (localStorage.getItem('persistenceMode') as 'LOCAL' | 'SESSION' | 'NONE') || 'LOCAL';
@@ -104,9 +167,7 @@ getGlobalPersistence(): void {
       })
     );
   }
-  
-  
-  
+
   storeToken(accessToken: string, refreshToken: string | null, mode: string): void {
     const validModes: Array<'LOCAL' | 'SESSION' | 'NONE'> = ['LOCAL', 'SESSION', 'NONE'];
     
@@ -126,8 +187,6 @@ getGlobalPersistence(): void {
     }
   }
   
-  
-  
   setPersistence(mode: 'LOCAL' | 'SESSION' | 'NONE'): void {
     localStorage.setItem('persistenceMode', mode);
   
@@ -146,8 +205,4 @@ getGlobalPersistence(): void {
       localStorage.clear();
     }
   }
-  
-  
-  
-  
 }

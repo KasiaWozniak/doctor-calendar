@@ -10,15 +10,27 @@ export class TokenInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const accessToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-    const cloned = req.clone({ setHeaders: { Authorization: `Bearer ${accessToken}` } });
+    console.log('🔵 Przechwytywanie żądania:', req.url, 'Token:', accessToken);
   
-    return next.handle(cloned).pipe(
+    const clonedRequest = accessToken
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${accessToken}` } })
+      : req;
+  
+    return next.handle(clonedRequest).pipe(
       catchError((error) => {
+        console.error('❌ Błąd HTTP:', error);
         if (error.status === 401) {
+          console.log('🔄 Odświeżanie tokena...');
           return this.authService.refreshAccessToken().pipe(
             switchMap((newToken) => {
-              const newCloned = req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } });
-              return next.handle(newCloned);
+              console.log('✅ Odświeżony token:', newToken);
+              const newClonedRequest = req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } });
+              return next.handle(newClonedRequest);
+            }),
+            catchError((refreshError) => {
+              console.error('❌ Błąd odświeżania tokena:', refreshError);
+              this.authService.logout();
+              return throwError(refreshError);
             })
           );
         }
