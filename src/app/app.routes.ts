@@ -10,13 +10,13 @@ import { AuthGuard } from './services/auth.guard';
 
 
 export const routes: Routes = [
-  //{ path: '', redirectTo: '/calendar', pathMatch: 'full' },
+  { path: '', redirectTo: '/calendar', pathMatch: 'full' },
   { path: 'availability', component: AvailabilityComponent, canActivate: [AuthGuard]  },
   { path: 'absence', component: AbsenceComponent, canActivate: [AuthGuard]  },
   { path: 'cart', component: CartComponent, canActivate: [AuthGuard]  },
   { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'calendar', component: CalendarComponent},
+  { path: 'calendar', component: CalendarComponent, canActivate: [AuthGuard]  },
 
 ];
 

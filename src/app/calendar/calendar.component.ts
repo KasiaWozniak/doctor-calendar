@@ -337,6 +337,9 @@ confirmCancelAppointment(): void {
         absences: this.dataService.getAbsences(),
     }).subscribe({
         next: (data) => {
+            console.log('Dane dostępności:', data.availability);
+            console.log('Dane rezerwacji:', data.appointments);
+            console.log('Dane absencji:', data.absences);
             this.availability = data.availability;
             this.appointments = data.appointments;
             this.absences = data.absences;
@@ -347,6 +350,7 @@ confirmCancelAppointment(): void {
         },
     });
 }
+
   
   
   saveAppointments(appointment: Appointment): void {
@@ -405,12 +409,14 @@ confirmCancelAppointment(): void {
 
         // Pobierz dostępność lekarza w danym dniu
         const availabilityForDay = this.availability?.filter((avail: any) => {
-            const isWithinDateRange =
-                new Date(avail.startDate) <= date &&
-                new Date(avail.endDate).setHours(23, 59, 59, 999) >= date.getTime();
-            const isDayIncluded = avail.days.includes(dayName);
-            return isWithinDateRange && isDayIncluded;
-        });
+          const isWithinDateRange =
+              new Date(avail.startDate) <= date &&
+              new Date(avail.endDate).setHours(23, 59, 59, 999) >= date.getTime();
+          const isDayIncluded = avail.days.includes(dayName);
+          return isWithinDateRange && isDayIncluded;
+      });
+      console.log('Dostępność dla dnia:', availabilityForDay);
+
 
         if (!availabilityForDay || availabilityForDay.length === 0) {
             this.slotsPerDay[dayKey] = this.getSlotsBetween('08:00', '20:30').map((time) =>
@@ -483,6 +489,7 @@ Pacjent: ${appointment.patientName}, wiek: ${appointment.patientAge} (${appointm
                 }
             }
         });
+        console.log('Sloty dla dnia:', this.slotsPerDay[dayKey]);
     });
 }
 
