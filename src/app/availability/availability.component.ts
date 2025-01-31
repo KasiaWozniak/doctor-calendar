@@ -12,10 +12,8 @@ import { DataService } from '../services/data.service';
   styleUrls: ['./availability.component.css'],
 })
 export class AvailabilityComponent {
-  // Dni tygodnia
   daysOfWeek = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
 
-  // Dane dla cyklicznej dostępności
   cyclicAvailability = {
     startDate: '',
     endDate: '',
@@ -29,12 +27,11 @@ export class AvailabilityComponent {
       Niedziela: false,
     } as Record<string, boolean>,
     timeRanges: [
-      { start: '', end: '' }, // Poranny czas
-      { start: '', end: '' }, // Popołudniowy czas
+      { start: '', end: '' }, 
+      { start: '', end: '' },
     ],
   };
 
-  // Dane dla jednorazowej dostępności
   singleAvailability = {
     date: '',
     timeRange: { start: '', end: '' },
@@ -43,7 +40,6 @@ export class AvailabilityComponent {
   constructor(private dataService: DataService) {}
 
   updateMinEndDate() {
-    // Jeśli data końcowa jest wcześniejsza niż data początkowa, resetujemy datę końcową
     if (this.cyclicAvailability.endDate < this.cyclicAvailability.startDate) {
       this.cyclicAvailability.endDate = '';
     }
@@ -89,7 +85,6 @@ export class AvailabilityComponent {
   
   
   updateMinSingleEndTime() {
-    // Jeśli czas końca jest wcześniejszy niż czas początku, resetujemy czas końca
     if (this.singleAvailability.timeRange.end < this.singleAvailability.timeRange.start) {
       this.singleAvailability.timeRange.end = '';
     }
@@ -130,13 +125,12 @@ export class AvailabilityComponent {
       endDate: this.cyclicAvailability.endDate,
       days: Object.keys(this.cyclicAvailability.days)
         .filter((day) => this.cyclicAvailability.days[day])
-        .map((day) => day.toLowerCase()), // Zamiana dni na małe litery
+        .map((day) => day.toLowerCase()),
       timeRanges: [...this.cyclicAvailability.timeRanges],
     };
   
 
     
-    // Sprawdź kolizje z absencjami
     this.dataService.getAbsences().subscribe({
       next: (absences) => {
         const newAvailabilityDates = this.getDatesInRange(
@@ -145,7 +139,6 @@ export class AvailabilityComponent {
           availability.days
         );
   
-        // Usuń kolidujące absencje
         absences.forEach((absence: { startDate: string; endDate: string }) => {
           const absenceDates = this.getDatesInRange(
             new Date(absence.startDate),
@@ -157,11 +150,9 @@ export class AvailabilityComponent {
           );
   
           overlappingDates.forEach((date) => {
-            // Usuń absencję
             this.dataService.deleteAbsence(date).subscribe(() => {
             });
   
-            // Przywróć rezerwacje dla dnia
             this.dataService.getAppointments().subscribe((appointments) => {
               appointments
                 .filter((appointment: any) => appointment.date === date)
@@ -174,9 +165,7 @@ export class AvailabilityComponent {
             });
           });
         });
-  
-        // Zapisz nową dostępność
-        this.dataService.addAvailability(availability).subscribe({
+          this.dataService.addAvailability(availability).subscribe({
           next: () => {
             alert('Dostępność została zapisana.');
           },
@@ -199,7 +188,6 @@ export class AvailabilityComponent {
       timeRanges: [this.singleAvailability.timeRange],
     };
   
-    // Usuń konfliktującą absencję i przywróć rezerwacje
     const singleDay = this.singleAvailability.date;
     this.dataService.getAbsences().subscribe({
       next: (absences) => {
@@ -215,21 +203,17 @@ export class AvailabilityComponent {
           const absenceEnd = new Date(targetAbsence.endDate);
   
           if (absenceStart.toISOString().split('T')[0] === absenceEnd.toISOString().split('T')[0]) {
-            // Absencja tylko na ten dzień – usuń całą absencję
             this.dataService.deleteAbsence(targetAbsence.id).subscribe(() => {
             });
           } else if (absenceStart.toISOString().split('T')[0] === singleDay) {
-            // Jeśli to początek absencji, przesuń początek absencji
             targetAbsence.startDate = new Date(new Date(singleDay).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             this.dataService.updateAbsence(targetAbsence).subscribe(() => {
             });
           } else if (absenceEnd.toISOString().split('T')[0] === singleDay) {
-            // Jeśli to koniec absencji, przesuń koniec absencji
             targetAbsence.endDate = new Date(new Date(singleDay).getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             this.dataService.updateAbsence(targetAbsence).subscribe(() => {
             });
           } else {
-            // Jeśli dzień jest w środku absencji, podziel absencję na dwie części
             const newAbsence = {
               ...targetAbsence,
               startDate: new Date(new Date(singleDay).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -244,7 +228,6 @@ export class AvailabilityComponent {
           }
         }
   
-        // Przywróć odwołane rezerwacje
         this.dataService.getAppointments().subscribe((appointments) => {
           appointments
             .filter((appointment: any) => appointment.date === singleDay && appointment.status === 'odwołana')
@@ -258,7 +241,6 @@ export class AvailabilityComponent {
             });
         });
   
-        // Zapisz dostępność jednorazową
         this.dataService.addAvailability(availability).subscribe({
           next: () => {
             console.log('Jednorazowa dostępność zapisana.');
@@ -276,7 +258,6 @@ export class AvailabilityComponent {
   }
   
 
-    // Metoda do obsługi przesyłania formularza
     addAvailability(): void {
       this.dataService.addAvailability(this.cyclicAvailability).subscribe(response => {
         console.log('Nowa dostępność została zapisana:', response);

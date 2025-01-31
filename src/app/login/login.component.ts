@@ -20,8 +20,16 @@ export class LoginComponent {
   constructor(private authService: AuthService, private router: Router) {}
 
   login(): void {
-    this.authService.login(this.email, this.password);
-    this.router.navigate(['/calendar']);
+    this.authService.login(this.email, this.password).subscribe({
+      next: () => {
+        this.router.navigate(['/calendar']); 
+      },
+      error: (err) => {
+        console.error('Błąd logowania:', err);
+        alert('Nie udało się zalogować. Sprawdź swoje dane.');
+      },
+    });
   }
+  
   
 }

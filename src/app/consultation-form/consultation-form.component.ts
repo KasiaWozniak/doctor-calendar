@@ -11,13 +11,12 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./consultation-form.component.css']
 })
 export class ConsultationFormComponent {
-  @Input() slot!: { date: Date; time: string }; // Dane o wybranym slocie
-  @Output() close = new EventEmitter<void>(); // Wyemitowanie zdarzenia zamknięcia
-  @Output() save = new EventEmitter<any>(); // Wyemitowanie zdarzenia zapisu danych
+  @Input() slot!: { date: Date; time: string }; 
+  @Output() close = new EventEmitter<void>(); 
+  @Output() save = new EventEmitter<any>(); 
 
-  // Przykładowe pola formularza
   consultationDetails = {
-    duration: 30, // Domyślnie 30 minut
+    duration: 30, 
     type: '',
     patientName: '',
     patientGender: '',
@@ -25,22 +24,18 @@ export class ConsultationFormComponent {
     notes: ''
   };
 
-  // Lista dostępnych typów wizyt
   visitTypes: string[] = ['Pierwsza wizyta', 'Wizyta kontrolna', 'Choroba przewlekła', 'Recepta'];
 
-  // Obsługa zamknięcia formularza
   onClose(): void {
     this.close.emit();
   }
 
-  // Obsługa zapisu rezerwacji
   saveConsultation(): void {
-    // Emituj dane konsultacji, aby zapisać
     this.save.emit(this.consultationDetails);
-    this.close.emit(); // Zamknij formularz po zapisaniu
+    this.close.emit(); 
   }
 
   onSubmit(): void {
-    this.save.emit({}); // Emituj dane formularza
+    this.save.emit({}); 
   }
 }

@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataService } from '../services/data.service';
-import { FormsModule } from '@angular/forms'; // Import FormsModule
-import { Router } from '@angular/router'; // Dodano import Router
+import { FormsModule } from '@angular/forms'; 
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -13,7 +13,7 @@ import { Router } from '@angular/router'; // Dodano import Router
   styleUrls: ['./cart.component.css']
 })
 export class CartComponent implements OnInit {
-  appointments: any[] = []; // Lista konsultacji w koszyku
+  appointments: any[] = []; 
   totalCost: number = 0;
   paymentDetails = {
     method: 'Karta kredytowa',
@@ -31,9 +31,8 @@ export class CartComponent implements OnInit {
   loadAppointments(): void {
     this.dataService.getAppointments().subscribe({
       next: (data) => {
-        // Filtruj wizyty, aby pokazywać tylko te, które nie są opłacone
-        this.appointments = data.filter((appt: any) => appt.status !== 'opłacone');
-        this.calculateTotal(); // Aktualizuj koszty po załadowaniu
+        this.appointments = data.filter((appt: any) => appt.status == 'zarezerwowane');
+        this.calculateTotal();
       },
       error: (error) => {
         console.error('Błąd ładowania wizyt:', error);
@@ -42,14 +41,13 @@ export class CartComponent implements OnInit {
   }
 
   calculateTotal(): void {
-    // Przykład wyliczania kosztów: każdy slot kosztuje 100 zł
     this.totalCost = this.appointments.reduce((sum, appt) => sum + (appt.duration / 30) * 100, 0);
   }
 
   removeAppointment(appointmentId: string): void {
     this.dataService.deleteAppointment(appointmentId).subscribe({
       next: () => {
-        this.loadAppointments(); // Odśwież listę wizyt
+        this.loadAppointments(); 
       },
       error: (err) => {
         console.error('Błąd usuwania wizyty:', err);
@@ -58,16 +56,13 @@ export class CartComponent implements OnInit {
   }
 
   isValidPayerName(name: string): boolean {
-    // Walidacja: tylko litery, spacje i polskie znaki
     return /^[A-Za-zżźćńółęąśŻŹĆĄŚĘŁÓŃ\s]+$/.test(name);
   }
 
   isValidCardNumber(): boolean {
     if (this.paymentDetails.method === 'Blik') {
-      // Kod BLIK powinien mieć dokładnie 6 cyfr
       return /^\d{6}$/.test(this.paymentDetails.cardNumber);
     } else {
-      // Numer karty/przelewu powinien mieć dokładnie 26 cyfr
       return /^\d{26}$/.test(this.paymentDetails.cardNumber);
     }
   }
@@ -98,17 +93,15 @@ export class CartComponent implements OnInit {
       return;
     }
 
-    // Oznacz wizyty jako opłacone
     const updatedAppointments = this.appointments.map((appt) => {
       return { ...appt, status: 'opłacone' };
     });
 
-    console.log('Updated Appointments:', updatedAppointments); // Dodaj to logowanie
+    console.log('Updated Appointments:', updatedAppointments); 
 
 
-    // Zaktualizuj status wizyt w serwerze
     updatedAppointments.forEach((appt) => {
-      console.log('Updating appointment with ID:', appt.id || appt._id); // Dodaj to logowanie
+      console.log('Updating appointment with ID:', appt.id || appt._id); 
       if (!appt.id && !appt._id) {
         console.error('Błąd: ID wizyty jest undefined:', appt);
         return;
@@ -120,6 +113,6 @@ export class CartComponent implements OnInit {
     });
 
     alert('Płatność została zrealizowana!');
-    this.router.navigate(['/calendar']); // Przekierowanie do kalendarza
+    this.router.navigate(['/calendar']);
   }
 }

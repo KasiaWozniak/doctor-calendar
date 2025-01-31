@@ -32,7 +32,6 @@ export class AbsenceComponent implements OnInit {
     });
   }
 
-  // absence.component.ts
 addAbsence(): void {
   if (this.newAbsence.startDate && this.newAbsence.endDate) {
     this.dataService.addAbsence(this.newAbsence).subscribe({
@@ -66,10 +65,8 @@ checkConflictsWithAbsences(): void {
               const appointmentDate = new Date(appointment.date);
 
               if (appointmentDate >= absenceStart && appointmentDate <= absenceEnd) {
-                // Zmień status wizyty na "odwołana"
                 appointment.status = 'odwołana';
 
-                // Zaktualizuj w bazie danych
                 this.dataService.updateAppointment(appointment).subscribe({
                   next: () => console.log(`Zmieniono status wizyty: ${appointment.id}`),
                   error: (err) => console.error('Błąd aktualizacji wizyty:', err),

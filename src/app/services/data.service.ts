@@ -6,12 +6,12 @@ import { catchError, Observable, throwError } from 'rxjs';
   providedIn: 'root',
 })
 export class DataService {
-  private apiUrl = 'http://localhost:5000'; // Podstawowy URL
+  private apiUrl = 'http://localhost:5000'; 
 
   constructor(private http: HttpClient) {}
 
   getData(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/availability`); // Jeśli dane dotyczą dostępności
+    return this.http.get<any>(`${this.apiUrl}/availability`);
   }
 
   saveAppointment(data: any): Observable<any> {
@@ -34,11 +34,11 @@ export class DataService {
   }
 
   getAvailability(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/availability`); // Pobieranie dostępności
+    return this.http.get<any>(`${this.apiUrl}/availability`); 
   }
   
   getAppointments(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/appointments`); // Pobieranie rezerwacji
+    return this.http.get<any>(`${this.apiUrl}/appointments`);
   }
 
   getAbsences(): Observable<any> {
@@ -54,11 +54,11 @@ export class DataService {
   }
   
   updateAppointment(appointment: any): Observable<any> {
-    const appointmentId = appointment.id || appointment._id; // Użyj `id` lub `_id`
+    const appointmentId = appointment.id || appointment._id; 
   
     if (!appointmentId) {
       console.error('Błąd: ID wizyty jest undefined:', appointment);
-      return throwError(() => new Error('ID wizyty jest wymagane')); // Zwróć błąd, jeśli ID jest undefined
+      return throwError(() => new Error('ID wizyty jest wymagane')); 
     }
   
     return this.http.put(`${this.apiUrl}/appointments/${appointmentId}`, appointment);

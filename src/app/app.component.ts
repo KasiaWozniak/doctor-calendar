@@ -45,8 +45,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class AppComponent {
   isAuthenticated = false;
-  loggedInUser: string | null = null; // Przechowuje nazwę użytkownika
-  isAdmin: boolean = false; // Dodane sprawdzanie, czy użytkownik to admin
+  loggedInUser: string | null = null; 
+  isAdmin: boolean = false; 
   constructor(private router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {
@@ -55,7 +55,6 @@ export class AppComponent {
       this.isAuthenticated = status;
       this.loggedInUser = localStorage.getItem('loggedInUser');
   
-      // Pobieranie roli użytkownika poprawnie
       this.isAdmin = localStorage.getItem('userRole') === 'admin' && status;
     });
   }

@@ -19,32 +19,39 @@ export class AuthService {
     });
   }
 
-  login(email: string, password: string): void {
+  login(email: string, password: string): Observable<any> {
     const data = { email, password };
-    this.http.post<{ token: string; refreshToken?: string; name: string; role: string }>('http://localhost:5000/users/login', data)
-    .subscribe((response) => {
-      if (response.token) {
-        console.log('✅ Zalogowano pomyślnie, zapisuję token w localStorage');
-        localStorage.setItem('accessToken', response.token); // Zapisywanie tokena
-        localStorage.setItem('loggedInUser', response.name); // Zapisz nazwę użytkownika
-        localStorage.setItem('userRole', response.role); // Zapisz rolę użytkownika
-      } else {
-        console.error('❌ Brak tokena w odpowiedzi z serwera');
-      }
-      console.log('Odpowiedź serwera:', response);
-
-    // Pobranie globalnego trybu persystencji po zalogowaniu
-    this.getGlobalPersistence();
-
-    setTimeout(() => {
-      const mode = (localStorage.getItem('persistenceMode') as 'LOCAL' | 'SESSION' | 'NONE') || 'LOCAL';
-      this.storeToken(response.token, response.refreshToken || '', mode);
-      this.authStatusSubject.next(true);
-      this.currentUser = response.name;
-    }, 100); // Opóźnienie, aby pobrać tryb z serwera
-  });
-  console.log(localStorage.getItem('accessToken'));
-}
+    
+    return this.http.post<{ token: string; refreshToken?: string; name: string; role: string }>(
+      'http://localhost:5000/users/login',
+      data
+    ).pipe(
+      map((response) => {
+        if (response.token) {
+          console.log('✅ Zalogowano pomyślnie, zapisuję token w localStorage');
+          localStorage.setItem('accessToken', response.token); 
+          localStorage.setItem('loggedInUser', response.name);
+          localStorage.setItem('userRole', response.role); 
+          this.authStatusSubject.next(true); 
+  
+          this.getGlobalPersistence();
+  
+          setTimeout(() => {
+            const mode = (localStorage.getItem('persistenceMode') as 'LOCAL' | 'SESSION' | 'NONE') || 'LOCAL';
+            this.storeToken(response.token, response.refreshToken || '', mode);
+            this.authStatusSubject.next(true);
+            this.currentUser = response.name;
+          }, 100); 
+        } else {
+          console.error('❌ Brak tokena w odpowiedzi z serwera');
+        }
+  
+        console.log('Odpowiedź serwera:', response);
+        return response; 
+      })
+    );
+  }
+  
 
 setGlobalPersistence(mode: 'LOCAL' | 'SESSION' | 'NONE'): void {
   const adminToken = localStorage.getItem('accessToken');
